@@ -1,17 +1,29 @@
 package dfki.transterra.jade;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.introspection.AMSSubscriber;
 import jade.domain.introspection.BornAgent;
 import jade.domain.introspection.DeadAgent;
 import jade.domain.introspection.Event;
 import jade.domain.introspection.IntrospectionVocabulary;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLParser;
+import jade.lang.acl.ParseException;
+import jade.lang.acl.TokenMgrError;
 import jade.tools.SocketProxyAgent.SocketProxyAgent;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -128,8 +140,13 @@ public class JadeProxyAgent extends Agent {
     private JMDNSManager jmdnsManager;
 
     /**
+     * The ServerSocket to accept connections.
+     */
+    private ServerSocket serverSocket;
+
+    /**
      * Creates the JMDNS Manager and adds the behavior registering all JADE
-     * agents there. Also, starts an SocketProxyAgent.
+     * agents there. Also, listens for incoming serverSocket messages.
      */
     @Override
     protected void setup() {
@@ -137,21 +154,24 @@ public class JadeProxyAgent extends Agent {
         try {
             jmdnsManager = new JMDNSManager(InetAddress.getByName("134.102.232.209"),
                     1099, new JadeProxyServiceListener()); // FIXME IP and Port
+            this.addBehaviour(new AgentJMDNSRegisterBehaviour());
         } catch (UnknownHostException ex) {
             logger.log(Level.SEVERE, "Could not create the JMDNS Manager.", ex);
         }
 
-        Agent spa = new SocketProxyAgent();
         try {
-            // Default params. Port: 6789 IP: JADE IP
-            AgentController spaControl = getContainerController().
-                    acceptNewAgent("jadeSocketProxyAgent", spa);
-            spaControl.start();
-        } catch (StaleProxyException ex0) {
-            logger.log(Level.SEVERE, "Could not start the SocketProxyAgent.", ex0);
+            serverSocket = new ServerSocket(6789); // FIXME Port
+        } catch (IOException ex) {
+            Logger.getLogger(JadeProxyAgent.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        this.addBehaviour(new AgentJMDNSRegisterBehaviour());
+        // Start thread accepting connections
+        new Thread() {
+            @Override
+            public void run() {
+                acceptConnectionsAndForward();
+            }
+        }.start();
     }
 
     /**
@@ -161,5 +181,58 @@ public class JadeProxyAgent extends Agent {
     protected void takeDown() {
         logger.log(Level.INFO, "JadeProxyAgent {0}: terminating", getLocalName());
         jmdnsManager.close();
+        try {
+            serverSocket.close();
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Could not close server socket.", ex);
+        }
+    }
+
+    /**
+     * Accepts connections, de-serializes the messages and forwards them.
+     */
+    private void acceptConnectionsAndForward() {
+        try {
+            while (true) {
+                Socket socket = serverSocket.accept();
+                logger.log(Level.FINE, "Accepted a new connection");
+                try {
+                    ACLMessage msg;
+                    try {
+                        // Parse message
+                        ACLParser parser = new ACLParser(socket.getInputStream());
+                        msg = parser.Message();
+                        logger.log(Level.INFO, "Received on socket: {0}", msg.toString());
+                    } finally {
+                        socket.close();
+                        logger.log(Level.FINE, "Closed connection");
+                    }
+                    // Every receiver must be set to NOT local
+                    ArrayList<AID> newRecvs = new ArrayList<AID>();
+                    Iterator<AID> i = msg.getAllReceiver();
+                    while(i.hasNext()) {
+                        AID aid = i.next();
+                        newRecvs.add(new AID(aid.getLocalName(), false));
+                    }
+                    msg.clearAllReceiver();
+                    for(AID aid : newRecvs) {
+                        msg.addReceiver(aid);
+                    }
+                    
+                    // Now send message
+                    send(msg);
+                    
+                } catch (TokenMgrError e) {
+                    logger.log(Level.WARNING, "Socket parsing threw: ", e);
+                } catch (ParseException e) {
+                    logger.log(Level.WARNING, "Socket parsing threw: ", e);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Socket reading/closing threw: ", e);
+                }
+            }
+        } catch (IOException e) {
+            // accept threw an exception. Could also be due to takeDown
+            logger.log(Level.SEVERE, "Socket accept threw (could be due to takeDown): ", e);
+        }
     }
 }

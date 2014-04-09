@@ -5,9 +5,15 @@
  */
 package dfki.transterra.jade;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,28 +27,52 @@ public class RockDummyAgent extends Agent {
 
     /**
      * Forwards all received messages to the ROCK proxy MTS via sockets.
-     * 
-     * TODO also change sender, so that responses go through the SocketProxyAgent?
+     *
+     * XXX also change sender to just local?
      */
     private class RockForwardBehaviour extends CyclicBehaviour {
-        
+
         @Override
         public void action() {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
-                // TODO process message: Send to ROCK proxy MTS via socket
-                System.out.println("We got a msg: " + msg);
+                // Change the sender & receiver names
+                AID oldSender = msg.getSender();
+                msg.setSender(new AID(oldSender.getLocalName(), true));
+
+                ArrayList<AID> newRecvs = new ArrayList<AID>();
+                Iterator<AID> i = msg.getAllReceiver();
+                while (i.hasNext()) {
+                    AID aid = i.next();
+                    newRecvs.add(new AID(aid.getLocalName(), true));
+                }
+                msg.clearAllReceiver();
+                for (AID aid : newRecvs) {
+                    msg.addReceiver(aid);
+                }
+                
+                logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
+
+                try {
+                    Socket socket = new Socket("127.0.0.1", 7890); // TODO Port
+                    PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                    writer.println(msg.toString());
+                    socket.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Fowarding message to Rock failed: ", e);
+                    System.err.println(e);
+                }
             } else {
                 block();
             }
         }
     }
-    
+
     /**
      * The Logger.
      */
     private static final Logger logger = Logger.getLogger(RockDummyAgent.class.getName());
-    
+
     @Override
     protected void setup() {
         logger.log(Level.INFO, "RockDummyAgent {0}: starting", getLocalName());
