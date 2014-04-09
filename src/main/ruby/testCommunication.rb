@@ -21,6 +21,9 @@ Orocos.run "fipa_services_test"  do
     
     mts_module.addReceiver(this_agent, true)
     
+    # make the mts socket capable
+    mts_module.addSocketTransport()
+    
     letter_writer = mts_module.letters.writer
     letter_reader = mts_module.port(this_agent).reader
     
@@ -33,8 +36,11 @@ Orocos.run "fipa_services_test"  do
         msg = FIPA::ACLMessage.new
         msg.setContent("test-content from #{this_agent} to #{other_agent} #{Time.now}")
         msg.addReceiver(FIPA::AgentId.new(other_agent))
+        # comment next line out
+        #msg.addReceiver(FIPA::AgentId.new(this_agent))
+        
         msg.setSender(FIPA::AgentId.new(this_agent))
-        msg.setConversationID("conversation-id-#{Time.now}")
+        msg.setConversationID("conversation-id")
 
         env = FIPA::ACLEnvelope.new
         env.insert(msg, FIPARepresentation::BITEFFICIENT)

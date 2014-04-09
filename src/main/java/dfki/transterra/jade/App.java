@@ -1,21 +1,8 @@
 package dfki.transterra.jade;
 
 import jade.core.AID;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
-
-import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import java.io.PrintWriter;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -35,12 +22,13 @@ public class App {
 
     public static void sendSocketString() {
         try {
-            Socket socket = new Socket("134.102.232.209", 6789);
+            Socket socket = new Socket("127.0.0.1", 6789);
 
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
             ACLMessage m = new ACLMessage(ACLMessage.REQUEST);
-            m.addReceiver(new AID("hans", true));
+            m.addReceiver(new AID("da0", true));
+            m.addReceiver(new AID("da1", true));
             m.setContent("hallo");
             System.out.println("Sending: " + m.toString());
             writer.println(m.toString());
