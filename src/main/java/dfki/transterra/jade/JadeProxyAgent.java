@@ -128,6 +128,10 @@ public class JadeProxyAgent extends Agent {
         public void serviceResolved(ServiceEvent event) {
         }
     }
+    
+    // These are to identify rock messages
+    public static final String ROCK_MSG_USER_DEF_PARAM_KEY = "isRockMessage";
+    public static final String ROCK_MSG_USER_DEF_PARAM_VALUE = "true";
 
     /**
      * The Logger.
@@ -209,7 +213,9 @@ public class JadeProxyAgent extends Agent {
                     }
                     // Sender & every receiver must be set to NOT local
                     AID oldSender = msg.getSender();
-                    msg.setSender(new AID(oldSender.getLocalName(), false));
+                    if(oldSender != null) {
+                        msg.setSender(new AID(oldSender.getLocalName(), false));
+                    }
                 
                     ArrayList<AID> newRecvs = new ArrayList<AID>();
                     Iterator<AID> i = msg.getAllReceiver();
@@ -221,6 +227,9 @@ public class JadeProxyAgent extends Agent {
                     for(AID aid : newRecvs) {
                         msg.addReceiver(aid);
                     }
+                    
+                    // Set a custom field, to mark it as a ROCK message
+                    msg.addUserDefinedParameter(ROCK_MSG_USER_DEF_PARAM_KEY, ROCK_MSG_USER_DEF_PARAM_VALUE);
                     
                     // Now send message
                     send(msg);

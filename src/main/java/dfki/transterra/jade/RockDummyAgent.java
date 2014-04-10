@@ -36,31 +36,42 @@ public class RockDummyAgent extends Agent {
         public void action() {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
-                // Change the sender & receiver names
-                AID oldSender = msg.getSender();
-                msg.setSender(new AID(oldSender.getLocalName(), true));
+                // Only forward, if it's not a ROCK message
+                if (!JadeProxyAgent.ROCK_MSG_USER_DEF_PARAM_VALUE.equals(
+                        msg.getUserDefinedParameter(
+                                JadeProxyAgent.ROCK_MSG_USER_DEF_PARAM_KEY))) {
 
-                ArrayList<AID> newRecvs = new ArrayList<AID>();
-                Iterator<AID> i = msg.getAllReceiver();
-                while (i.hasNext()) {
-                    AID aid = i.next();
-                    newRecvs.add(new AID(aid.getLocalName(), true));
-                }
-                msg.clearAllReceiver();
-                for (AID aid : newRecvs) {
-                    msg.addReceiver(aid);
-                }
-                
-                logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
+                    // Change the sender & receiver names to local names
+                    AID oldSender = msg.getSender();
 
-                try {
-                    Socket socket = new Socket("127.0.0.1", 7890); // TODO Port
-                    PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                    writer.println(msg.toString());
-                    socket.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Fowarding message to Rock failed: ", e);
-                    System.err.println(e);
+                    if (oldSender != null) {
+                        msg.setSender(new AID(oldSender.getLocalName(), true));
+                    }
+
+                    ArrayList<AID> newRecvs = new ArrayList<AID>();
+                    Iterator<AID> i = msg.getAllReceiver();
+                    while (i.hasNext()) {
+                        AID aid = i.next();
+                        newRecvs.add(new AID(aid.getLocalName(), true));
+                    }
+                    msg.clearAllReceiver();
+                    for (AID aid : newRecvs) {
+                        msg.addReceiver(aid);
+                    }
+
+                    logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
+
+                    try {
+                        Socket socket = new Socket("127.0.0.1", 7890); // TODO Port
+                        PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                        writer.println(msg.toString());
+                        // Include EOF
+                        writer.print(-1);
+                        socket.close();
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Fowarding message to Rock failed: ", e);
+                        System.err.println(e);
+                    }
                 }
             } else {
                 block();

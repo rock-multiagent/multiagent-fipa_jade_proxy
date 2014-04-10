@@ -27,8 +27,11 @@ public class App {
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
             ACLMessage m = new ACLMessage(ACLMessage.REQUEST);
+            
+            m.setSender(new AID("itsme", true));
+            
             m.addReceiver(new AID("da0", true));
-            m.addReceiver(new AID("da1", true));
+            m.addReceiver(new AID("rock_agent", true));
             m.setContent("hallo");
             System.out.println("Sending: " + m.toString());
             writer.println(m.toString());
