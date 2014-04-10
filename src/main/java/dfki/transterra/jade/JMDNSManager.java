@@ -1,9 +1,13 @@
 package dfki.transterra.jade;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -38,25 +42,47 @@ public class JMDNSManager {
 
     private JmDNS jmdns;
     private InetAddress inetAddress;
-    private int socketProxyAgentPort;
+    private int rockProxyMTSPort;
+
+    public static InetAddress getLocalIPv4Address() throws SocketException {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface current = interfaces.nextElement();
+            if (!current.isUp() || current.isLoopback() || current.isVirtual()) {
+                continue;
+            }
+            // Only use eth, not wlan
+            if (!current.getName().startsWith("eth")) {
+                continue;
+            }
+
+            Enumeration<InetAddress> addresses = current.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress current_addr = addresses.nextElement();
+                if (current_addr.isLoopbackAddress() || !(current_addr instanceof Inet4Address)) {
+                    continue;
+                }
+                // We found our address
+                return current_addr;
+            }
+        }
+
+        throw new SocketException("No matching local IPv4 interface found.");
+    }
 
     /**
-     * @param inetAddress the IPv4 address to bind to. Must point to the ROCK
-     * proxy MTS uses!
-     * @param socketProxyAgentPort the port the SocketProxyAgent listens on.
+     * @param rockProxyMTSPort the port the rockProxyMTSPort listens on.
      * @param listener a listener that performs JADE relevant actions when
      * services are added or removed.
      */
-    public JMDNSManager(InetAddress inetAddress, int socketProxyAgentPort, ServiceListener listener) {
-        this.inetAddress = inetAddress;
-        this.socketProxyAgentPort = socketProxyAgentPort;
-        try {
-            jmdns = JmDNS.create(inetAddress);
-            jmdns.addServiceListener(JMDNS_TYPE, listener);
-            logger.log(Level.INFO, "JMDNS created for IP {0}", inetAddress.getHostAddress());
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "JMDNS could not be started", e);
-        }
+    public JMDNSManager(int rockProxyMTSPort, ServiceListener listener) throws IOException {
+        this.rockProxyMTSPort = rockProxyMTSPort;
+        // Get the eth0 v4 address
+        this.inetAddress = getLocalIPv4Address();
+
+        jmdns = JmDNS.create(inetAddress);
+        jmdns.addServiceListener(JMDNS_TYPE, listener);
+        logger.log(Level.INFO, "JMDNS created for IP {0}", inetAddress.getHostAddress());
     }
 
     /**
@@ -70,10 +96,10 @@ public class JMDNSManager {
             properties.put("DESCRIPTION", JMDNS_DESCRIPTION);
             properties.put("TYPE", "mts_client");
             properties.put("LOCATOR", "udt://" + inetAddress.getHostAddress() + ":"
-                    + socketProxyAgentPort + " fipa_services::MessageTransportTask");
+                    + rockProxyMTSPort + " fipa_services::MessageTransportTask");
             properties.put("TIMESTAMP", JMDNS_DATE_FORMAT.format(GregorianCalendar.getInstance().getTime()));
 
-            jmdns.registerService(ServiceInfo.create(JMDNS_TYPE, localname, socketProxyAgentPort, 1, 1, true, properties));
+            jmdns.registerService(ServiceInfo.create(JMDNS_TYPE, localname, rockProxyMTSPort, 1, 1, true, properties));
             logger.log(Level.INFO, "JMDNS registerered {0}", localname);
         } catch (IOException e) {
             logger.log(Level.WARNING, "JMDNS register failed", e);

@@ -62,7 +62,7 @@ public class RockDummyAgent extends Agent {
                     logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
 
                     try {
-                        Socket socket = new Socket("127.0.0.1", 7890); // TODO Port
+                        Socket socket = new Socket("127.0.0.1", rockSocketPort);
                         PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                         writer.println(msg.toString());
                         // Include EOF
@@ -83,10 +83,29 @@ public class RockDummyAgent extends Agent {
      * The Logger.
      */
     private static final Logger logger = Logger.getLogger(RockDummyAgent.class.getName());
+    
+    /**
+     * The port ROCK listens on with its ServerSocket.
+     */
+    private int rockSocketPort;
 
     @Override
     protected void setup() {
         logger.log(Level.INFO, "RockDummyAgent {0}: starting", getLocalName());
+        
+        try {
+            Object[] args = getArguments();
+            if(args == null || args.length < 1) {
+                throw new Exception();
+            }
+            rockSocketPort = Integer.parseInt(args[0].toString());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Bad/no port arguments provided", e);
+            // In the case of an exception here, we cannot function properly
+            doDelete();
+            return;
+        }
+        
         this.addBehaviour(new RockForwardBehaviour());
     }
 

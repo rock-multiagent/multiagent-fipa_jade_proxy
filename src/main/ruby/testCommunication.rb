@@ -10,19 +10,24 @@ Orocos.run "fipa_services_test"  do
     # Start a mts for the communication
     begin
         mts_module = TaskContext.get "mts_0"
+        mts_proxy_module = TaskContext.get "mts_1"
     rescue Orocos::NotFound
         print 'Deployment not found.'
         raise
     end
+    mts_proxy_module.configure
     mts_module.configure
+    mts_proxy_module.start
     mts_module.start
     
     this_agent = "rock_agent"
+    dummy_proxy_agent = "dummy_proxy_agent"
     
     mts_module.addReceiver(this_agent, true)
     
-    # make the mts socket capable
-    mts_module.addSocketTransport()
+    # make the mts socket capable, and add a dummy to be abel to see the IP and Port in avahi-discover
+    mts_proxy_module.addReceiver(dummy_proxy_agent, true)
+    mts_proxy_module.addSocketTransport()
     
     letter_writer = mts_module.letters.writer
     letter_reader = mts_module.port(this_agent).reader

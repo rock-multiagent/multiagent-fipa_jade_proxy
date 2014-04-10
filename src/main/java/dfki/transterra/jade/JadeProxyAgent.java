@@ -94,7 +94,9 @@ public class JadeProxyAgent extends Agent {
                         new String[]{event.getName()});
                 Agent rockDummyAgent = new RockDummyAgent();
                 try {
-                    // TODO use paramteres as soon as he expects some
+                    Object[] args = new Object[] { rockSocketPort };
+                    rockDummyAgent.setArguments(args);
+                    
                     AgentController dummyControl = getContainerController().
                             acceptNewAgent(event.getName(), rockDummyAgent);
                     dummyControl.start();
@@ -128,7 +130,7 @@ public class JadeProxyAgent extends Agent {
         public void serviceResolved(ServiceEvent event) {
         }
     }
-    
+
     // These are to identify rock messages
     public static final String ROCK_MSG_USER_DEF_PARAM_KEY = "isRockMessage";
     public static final String ROCK_MSG_USER_DEF_PARAM_VALUE = "true";
@@ -148,26 +150,45 @@ public class JadeProxyAgent extends Agent {
      */
     private ServerSocket serverSocket;
 
+    // Relevant ports for configuration.
+    private int jadeSocketPort;
+    private int rockSocketPort;
+    private int rockProxyMTSPort;
+
     /**
      * Creates the JMDNS Manager and adds the behavior registering all JADE
      * agents there. Also, listens for incoming serverSocket messages.
      */
     @Override
     protected void setup() {
-        logger.log(Level.INFO, "JadeProxyAgent {0}: starting", getLocalName());
         try {
-            jmdnsManager = new JMDNSManager(InetAddress.getByName("134.102.232.209"),
-                    1099, new JadeProxyServiceListener()); // FIXME IP and Port
-            this.addBehaviour(new AgentJMDNSRegisterBehaviour());
-        } catch (UnknownHostException ex) {
-            logger.log(Level.SEVERE, "Could not create the JMDNS Manager.", ex);
+            Object[] args = getArguments();
+            if(args == null || args.length < 3) {
+                throw new Exception();
+            }
+            
+            jadeSocketPort = Integer.parseInt(args[0].toString());
+            rockSocketPort = Integer.parseInt(args[1].toString());
+            rockProxyMTSPort = Integer.parseInt(args[2].toString());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Bad/no port arguments provided", e);
+            // In the case of an exception here, we cannot function properly
+            doDelete();
+            return;
         }
 
+        logger.log(Level.INFO, "JadeProxyAgent {0}: starting", getLocalName());
         try {
-            serverSocket = new ServerSocket(6789); // FIXME Port
+            jmdnsManager = new JMDNSManager(rockProxyMTSPort, new JadeProxyServiceListener());
+            serverSocket = new ServerSocket(jadeSocketPort);
         } catch (IOException ex) {
-            Logger.getLogger(JadeProxyAgent.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, "Error initializing JMDNS or ServerSocket:", ex);
+            // In the case of an exception here, we cannot function properly
+            doDelete();
+            return;
         }
+
+        this.addBehaviour(new AgentJMDNSRegisterBehaviour());
 
         // Start thread accepting connections
         new Thread() {
@@ -184,11 +205,15 @@ public class JadeProxyAgent extends Agent {
     @Override
     protected void takeDown() {
         logger.log(Level.INFO, "JadeProxyAgent {0}: terminating", getLocalName());
-        jmdnsManager.close();
-        try {
-            serverSocket.close();
-        } catch (IOException ex) {
-            logger.log(Level.WARNING, "Could not close server socket.", ex);
+        if (jmdnsManager != null) {
+            jmdnsManager.close();
+        }
+        if (serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (IOException ex) {
+                logger.log(Level.WARNING, "Could not close server socket.", ex);
+            }
         }
     }
 
@@ -213,27 +238,27 @@ public class JadeProxyAgent extends Agent {
                     }
                     // Sender & every receiver must be set to NOT local
                     AID oldSender = msg.getSender();
-                    if(oldSender != null) {
+                    if (oldSender != null) {
                         msg.setSender(new AID(oldSender.getLocalName(), false));
                     }
-                
+
                     ArrayList<AID> newRecvs = new ArrayList<AID>();
                     Iterator<AID> i = msg.getAllReceiver();
-                    while(i.hasNext()) {
+                    while (i.hasNext()) {
                         AID aid = i.next();
                         newRecvs.add(new AID(aid.getLocalName(), false));
                     }
                     msg.clearAllReceiver();
-                    for(AID aid : newRecvs) {
+                    for (AID aid : newRecvs) {
                         msg.addReceiver(aid);
                     }
-                    
+
                     // Set a custom field, to mark it as a ROCK message
                     msg.addUserDefinedParameter(ROCK_MSG_USER_DEF_PARAM_KEY, ROCK_MSG_USER_DEF_PARAM_VALUE);
-                    
+
                     // Now send message
                     send(msg);
-                    
+
                 } catch (TokenMgrError e) {
                     logger.log(Level.WARNING, "Socket parsing threw: ", e);
                 } catch (ParseException e) {
