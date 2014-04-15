@@ -8,7 +8,10 @@ package dfki.transterra.jade;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLParser;
+import jade.lang.acl.StringACLCodec;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -28,7 +31,6 @@ public class RockDummyAgent extends Agent {
     /**
      * Forwards all received messages to the ROCK proxy MTS via sockets.
      *
-     * XXX also change sender to just local?
      */
     private class RockForwardBehaviour extends CyclicBehaviour {
 
@@ -69,7 +71,7 @@ public class RockDummyAgent extends Agent {
                         writer.print(-1);
                         socket.close();
                     } catch (IOException e) {
-                        logger.log(Level.WARNING, "Fowarding message to Rock failed: ", e);
+                        logger.log(Level.WARNING, "Forwarding message to Rock failed: ", e);
                         System.err.println(e);
                     }
                 }

@@ -11,17 +11,12 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.ACLParser;
 import jade.lang.acl.ParseException;
 import jade.lang.acl.TokenMgrError;
-import jade.tools.SocketProxyAgent.SocketProxyAgent;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,7 +38,6 @@ public class JadeProxyAgent extends Agent {
      */
     private class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
 
-        // TODO more handlers?
         protected void installHandlers(Map handlers) {
 
             EventHandler addAgentEH = new EventHandler() {
@@ -61,7 +55,7 @@ public class JadeProxyAgent extends Agent {
                     DeadAgent da = (DeadAgent) event;
                     // We unregister in any case:
                     // It was a RockDummyAgent: the JMDNS entry will already be deleted
-                    // It was a JADE Agent: we delte the entry
+                    // It was a JADE Agent: we delete the entry
                     jmdnsManager.unregisterJadeAgent(da.getAgent().getLocalName());
                 }
             };
@@ -82,6 +76,7 @@ public class JadeProxyAgent extends Agent {
      */
     public class JadeProxyServiceListener implements ServiceListener {
 
+        // TODO this code must probably go to resolved!?
         public void serviceAdded(ServiceEvent event) {
             // If it is a ROCK agent, we must create a RockDummyAgent,
             // if it is a JADE agent, we must not do anything.
@@ -92,9 +87,15 @@ public class JadeProxyAgent extends Agent {
                 // This means it's a ROCK agent
                 logger.log(Level.INFO, "Rock agent appeared: {0}",
                         new String[]{event.getName()});
+                
+                // TODO parse the rockSocketPort from the event TXT LOCATOR
+                
+                String locator = event.getInfo().getPropertyString("LOCATOR");
+                logger.log(Level.INFO, "Locator is {0}", locator);
+                
                 Agent rockDummyAgent = new RockDummyAgent();
                 try {
-                    Object[] args = new Object[] { rockSocketPort };
+                    Object[] args = new Object[] { 7890/*rockSocketPort*/ };
                     rockDummyAgent.setArguments(args);
                     
                     AgentController dummyControl = getContainerController().
@@ -128,6 +129,8 @@ public class JadeProxyAgent extends Agent {
         }
 
         public void serviceResolved(ServiceEvent event) {
+            String locator = event.getInfo().getPropertyString("LOCATOR");
+            logger.log(Level.INFO, "Locator is {0}", locator);
         }
     }
 
@@ -150,10 +153,10 @@ public class JadeProxyAgent extends Agent {
      */
     private ServerSocket serverSocket;
 
-    // Relevant ports for configuration.
+    /**
+     * Jade's Socket port.
+     */
     private int jadeSocketPort;
-    private int rockSocketPort;
-    private int rockProxyMTSPort;
 
     /**
      * Creates the JMDNS Manager and adds the behavior registering all JADE
@@ -163,15 +166,13 @@ public class JadeProxyAgent extends Agent {
     protected void setup() {
         try {
             Object[] args = getArguments();
-            if(args == null || args.length < 3) {
+            if(args == null || args.length < 1) {
                 throw new Exception();
             }
             
             jadeSocketPort = Integer.parseInt(args[0].toString());
-            rockSocketPort = Integer.parseInt(args[1].toString());
-            rockProxyMTSPort = Integer.parseInt(args[2].toString());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Bad/no port arguments provided", e);
+            logger.log(Level.SEVERE, "Bad/no port argument provided", e);
             // In the case of an exception here, we cannot function properly
             doDelete();
             return;
@@ -179,7 +180,7 @@ public class JadeProxyAgent extends Agent {
 
         logger.log(Level.INFO, "JadeProxyAgent {0}: starting", getLocalName());
         try {
-            jmdnsManager = new JMDNSManager(rockProxyMTSPort, new JadeProxyServiceListener());
+            jmdnsManager = new JMDNSManager(jadeSocketPort, new JadeProxyServiceListener());
             serverSocket = new ServerSocket(jadeSocketPort);
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error initializing JMDNS or ServerSocket:", ex);

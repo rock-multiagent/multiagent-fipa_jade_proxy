@@ -42,8 +42,9 @@ public class JMDNSManager {
 
     private JmDNS jmdns;
     private InetAddress inetAddress;
-    private int rockProxyMTSPort;
+    private int jadeSocketPort;
 
+    // FIXME wlan??
     public static InetAddress getLocalIPv4Address() throws SocketException {
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
         while (interfaces.hasMoreElements()) {
@@ -71,12 +72,12 @@ public class JMDNSManager {
     }
 
     /**
-     * @param rockProxyMTSPort the port the rockProxyMTSPort listens on.
+     * @param rockProxyMTSPort the port the jadeSocketPort listens on.
      * @param listener a listener that performs JADE relevant actions when
      * services are added or removed.
      */
     public JMDNSManager(int rockProxyMTSPort, ServiceListener listener) throws IOException {
-        this.rockProxyMTSPort = rockProxyMTSPort;
+        this.jadeSocketPort = rockProxyMTSPort;
         // Get the eth0 v4 address
         this.inetAddress = getLocalIPv4Address();
 
@@ -95,12 +96,15 @@ public class JMDNSManager {
             HashMap<String, String> properties = new HashMap<String, String>();
             properties.put("DESCRIPTION", JMDNS_DESCRIPTION);
             properties.put("TYPE", "mts_client");
-            properties.put("LOCATOR", "udt://" + inetAddress.getHostAddress() + ":"
-                    + rockProxyMTSPort + " fipa_services::MessageTransportTask");
+            properties.put("LOCATOR", "tcp://" + inetAddress.getHostAddress() + ":"
+                    + jadeSocketPort + " JadeProxyAgent");
             properties.put("TIMESTAMP", JMDNS_DATE_FORMAT.format(GregorianCalendar.getInstance().getTime()));
 
-            jmdns.registerService(ServiceInfo.create(JMDNS_TYPE, localname, rockProxyMTSPort, 1, 1, true, properties));
-            logger.log(Level.INFO, "JMDNS registerered {0}", localname);
+            ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, localname,
+                    jadeSocketPort, 1, 1, true, properties);
+            
+            jmdns.registerService(si);
+            logger.log(Level.INFO, "JMDNS registerered {0}", si.getQualifiedName());
         } catch (IOException e) {
             logger.log(Level.WARNING, "JMDNS register failed", e);
         }
