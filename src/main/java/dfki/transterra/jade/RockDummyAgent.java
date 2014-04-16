@@ -8,12 +8,10 @@ package dfki.transterra.jade;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.ACLParser;
-import jade.lang.acl.StringACLCodec;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -64,7 +62,7 @@ public class RockDummyAgent extends Agent {
                     logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
 
                     try {
-                        Socket socket = new Socket("127.0.0.1", rockSocketPort);
+                        Socket socket = new Socket(rockSocketIP, rockSocketPort);
                         PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                         writer.println(msg.toString());
                         // Include EOF
@@ -87,7 +85,11 @@ public class RockDummyAgent extends Agent {
     private static final Logger logger = Logger.getLogger(RockDummyAgent.class.getName());
     
     /**
-     * The port ROCK listens on with its ServerSocket.
+     * The address of the agent's ROCK MTS.
+     */
+    private InetAddress rockSocketIP;
+    /**
+     * The port the agent's ROCK MTS listens on with its ServerSocket.
      */
     private int rockSocketPort;
 
@@ -97,12 +99,13 @@ public class RockDummyAgent extends Agent {
         
         try {
             Object[] args = getArguments();
-            if(args == null || args.length < 1) {
+            if(args == null || args.length < 2) {
                 throw new Exception();
             }
-            rockSocketPort = Integer.parseInt(args[0].toString());
+            rockSocketIP = InetAddress.getByName(args[0].toString());
+            rockSocketPort = Integer.parseInt(args[1].toString());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Bad/no port arguments provided", e);
+            logger.log(Level.SEVERE, "Bad/no ip/port arguments provided", e);
             // In the case of an exception here, we cannot function properly
             doDelete();
             return;
