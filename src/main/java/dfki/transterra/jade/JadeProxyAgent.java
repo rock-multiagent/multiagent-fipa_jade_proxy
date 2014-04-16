@@ -275,6 +275,7 @@ public class JadeProxyAgent extends Agent {
 
                     // Now send message
                     send(msg);
+                    //msg.setDefaultEnvelope();
 
                 } catch (TokenMgrError e) {
                     logger.log(Level.WARNING, "Socket parsing threw: ", e);

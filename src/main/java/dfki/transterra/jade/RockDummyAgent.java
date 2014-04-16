@@ -60,6 +60,11 @@ public class RockDummyAgent extends Agent {
                     }
 
                     logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
+                    
+                    msg.setDefaultEnvelope();
+                    // TODO set env representation
+                    
+                    logger.log(Level.INFO, "Envelope: {0}", msg.getEnvelope());
 
                     try {
                         Socket socket = new Socket(rockSocketIP, rockSocketPort);
@@ -70,7 +75,6 @@ public class RockDummyAgent extends Agent {
                         socket.close();
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Forwarding message to Rock failed: ", e);
-                        System.err.println(e);
                     }
                 }
             } else {

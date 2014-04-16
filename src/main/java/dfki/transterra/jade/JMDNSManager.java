@@ -44,7 +44,6 @@ public class JMDNSManager {
     private InetAddress inetAddress;
     private int jadeSocketPort;
 
-    // FIXME wlan??
     public static InetAddress getLocalIPv4Address() throws SocketException {
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
         while (interfaces.hasMoreElements()) {
