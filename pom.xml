@@ -19,7 +19,10 @@
             <id>tilab</id>
             <url>http://jade.tilab.com/maven/</url>
         </repository>
-
+        <repository>
+            <id>jade-web-toolkit</id>
+            <url>http://jade-web-toolkit.googlecode.com/svn/maven/3/repositories/inhouse</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -33,6 +36,16 @@
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
             <version>4.3.1</version>
+        </dependency>
+        <dependency>
+            <artifactId>jade-addon-fipa-bit-efficient-aclcodec</artifactId>
+            <groupId>jade-framework</groupId>
+            <version>4.0.1-M1-RELEASE</version>
+        </dependency>
+        <dependency>
+            <artifactId>jade-addon-fipa-bit-efficient-envelope-codec</artifactId>
+            <groupId>jade-framework</groupId>
+            <version>4.0.1-M1-RELEASE</version>
         </dependency>
         <dependency>
             <groupId>javax.jmdns</groupId>

@@ -34,44 +34,6 @@ import javax.jmdns.ServiceListener;
 public class JadeProxyAgent extends Agent {
 
     /**
-     * Every time an agent gets "born" it is registered via JMDNS, and when it
-     * "dies" it is unregistered.
-     */
-    private class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
-
-        protected void installHandlers(Map handlers) {
-
-            EventHandler addAgentEH = new EventHandler() {
-                public void handle(Event event) {
-                    BornAgent ba = (BornAgent) event;
-                    // We must only register JADE agents, not RockDummyAgents
-                    if (!ba.getClassName().equals(RockDummyAgent.class.getName())) {
-                        jmdnsManager.registerJadeAgent(ba.getAgent().getLocalName());
-                    }
-                }
-            };
-
-            EventHandler removeAgentEH = new EventHandler() {
-                public void handle(Event event) {
-                    DeadAgent da = (DeadAgent) event;
-                    // We unregister in any case:
-                    // It was a RockDummyAgent: the JMDNS entry will already be deleted
-                    // It was a JADE Agent: we delete the entry
-                    jmdnsManager.unregisterJadeAgent(da.getAgent().getLocalName());
-                }
-            };
-
-            handlers.put(IntrospectionVocabulary.BORNAGENT, addAgentEH);
-            handlers.put(IntrospectionVocabulary.DEADAGENT, removeAgentEH);
-//          handlers.put(IntrospectionVocabulary.SUSPENDEDAGENT, jpa);
-//          handlers.put(IntrospectionVocabulary.RESUMEDAGENT, jpa);
-//          handlers.put(IntrospectionVocabulary.FROZENAGENT, jpa);
-//          handlers.put(IntrospectionVocabulary.THAWEDAGENT, jpa);
-//          handlers.put(IntrospectionVocabulary.MOVEDAGENT, jpa);
-        }
-    }
-
-    /**
      * Listens for added/removed JMDNS services. Adds/removes corresponding
      * RockDummyAgents, unless it was a JADE agent that we registered ourselves.
      */
@@ -205,7 +167,7 @@ public class JadeProxyAgent extends Agent {
             return;
         }
 
-        this.addBehaviour(new AgentJMDNSRegisterBehaviour());
+        this.addBehaviour(new AgentJMDNSRegisterBehaviour(jmdnsManager));
 
         // Start thread accepting connections
         new Thread() {
@@ -307,7 +269,7 @@ public class JadeProxyAgent extends Agent {
         for(String locator : locatorsArray) {
             // XXX also check for "fipa::services::message_transport::SocketTransport" ?
             if(locator.startsWith(prefix)) {
-                // Cut las part, cut "tcp://"
+                // Cut last part, cut "tcp://"
                 String[] locatorParts = locator.split(" ");
                 if(locatorParts.length < 2) {
                     return null;

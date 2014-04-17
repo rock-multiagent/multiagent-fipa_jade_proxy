@@ -10,6 +10,7 @@ Without this configuration present, some functionality in the IDE may be limited
         <configurations>
             <configuration id="jade" profiles=""/>
             <configuration id="jade proxy" profiles=""/>
+            <configuration id="jade tcpmtp" profiles=""/>
         </configurations>
     </config-data>
 </project-shared-configuration>

@@ -5,9 +5,14 @@
  */
 package dfki.transterra.jade.mtp;
 
+import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
+import jade.content.lang.StringCodec;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.domain.FIPANames;
+import jade.lang.acl.ACLCodec;
+import jade.lang.acl.LEAPACLCodec;
+import jade.lang.acl.StringACLCodec;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
@@ -77,6 +82,9 @@ public class TcpMtp implements MTP {
         } catch (SocketException ex) {
             logger.log(Level.SEVERE, "Activating Tcp server failed: ", ex);
             throw new MTPException("Activating Tcp server failed: ", ex);
+        } catch (IOException ex) {
+            logger.log(Level.SEVERE, "Activating Tcp server failed: ", ex);
+            throw new MTPException("Activating Tcp server failed: ", ex);
         }
         // Save
         servers.put(server.getAddress().toString(), server);
@@ -90,7 +98,13 @@ public class TcpMtp implements MTP {
         }
         logger.log(Level.INFO, "Activating Tcp server.");
         // Create
-        TcpServer server = new TcpServer(d, prfl, (TcpAddress) ta);
+        TcpServer server;
+        try {
+            server = new TcpServer(d, prfl, (TcpAddress) ta);
+        } catch (IOException ex) {
+            logger.log(Level.SEVERE, "Activating Tcp server failed: ", ex);
+            throw new MTPException("Activating Tcp server failed: ", ex);
+        }
         // Save
         servers.put(server.getAddress().toString(), server);
     }
@@ -119,16 +133,24 @@ public class TcpMtp implements MTP {
 
     public void deliver(String string, Envelope envlp, byte[] bytes) throws MTPException {
         logger.log(Level.INFO, "Sending envelope to {0}", string);
-        
+
         // Extract tcp address
         String[] addParts = string.substring("tcp://".length()).split(":");
 
         try {
             Socket socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+            BitEfficientEnvelopeCodec codec = new BitEfficientEnvelopeCodec();
+            String envStr = "";
+            try {
+                envStr = new String(codec.encode(envlp));
+            } catch (Exception ex) {
+                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
+            }
             
             // Print Envelope (TODO Bitefficient?)
-            writer.print(XMLCodec.encodeXML(envlp));
+            writer.print(envStr);
             // Print message
             writer.println(new String(bytes));
             // Include EOF
@@ -137,15 +159,15 @@ public class TcpMtp implements MTP {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
             throw new MTPException("Forwarding envelope to Rock failed: ", e);
-        } catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
             throw new MTPException("Forwarding envelope to Rock failed: ", e);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
             throw new MTPException("Forwarding envelope to Rock failed: ", e);
         }
     }
 }
 // dfki.transterra.jade.mtp.TcpMtp
-// tcp://10.250.3.35:59190
+// tcp://10.250.7.7:37931
 

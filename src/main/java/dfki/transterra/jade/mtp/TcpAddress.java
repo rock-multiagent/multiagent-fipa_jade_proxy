@@ -61,6 +61,10 @@ public class TcpAddress implements TransportAddress {
     public String getPort() {
         return "" + port;
     }
+    
+    public int getPortNo() {
+        return port;
+    }
 
     public String getFile() {
         throw new UnsupportedOperationException("Not supported.");

@@ -81,7 +81,9 @@ public class JMDNSManager {
         this.inetAddress = getLocalIPv4Address();
 
         jmdns = JmDNS.create(inetAddress);
-        jmdns.addServiceListener(JMDNS_TYPE, listener);
+        if(listener != null) {
+            jmdns.addServiceListener(JMDNS_TYPE, listener);
+        }
         logger.log(Level.INFO, "JMDNS created for IP {0}", inetAddress.getHostAddress());
     }
 
