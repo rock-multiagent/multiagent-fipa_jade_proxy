@@ -5,19 +5,19 @@
  */
 package dfki.transterra.jade.mtp;
 
+import cascom.fipa.acl.BitEffACLCodec;
 import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
-import jade.content.lang.StringCodec;
+import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
-import jade.domain.FIPANames;
-import jade.lang.acl.ACLCodec;
-import jade.lang.acl.LEAPACLCodec;
-import jade.lang.acl.StringACLCodec;
+import jade.lang.acl.ACLMessage;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
-import jade.mtp.http.XMLCodec;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
@@ -149,6 +149,23 @@ public class TcpMtp implements MTP {
                 Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
             }
             
+            // FIXME Test
+            // (inform:sender(agent-identifier:namerock_agent):receiver(set(agent-identifier:namejadeProxyAgent))
+            // :content#72"test-content from rock_agent to jadeProxyAgent 2014-04-17 14:34:04 +0200:conversation-id(rock_agent0))
+            BitEffACLCodec mCod = new BitEffACLCodec();
+            ACLMessage testM = new ACLMessage(ACLMessage.INFORM);
+            testM.setSender(new AID("rock_agent", true));
+            testM.addReceiver(new AID("jadeProxyAgent", true));
+            testM.setContent("test-content from rock_agent to jadeProxyAgent 2014-04-17 14:34:04 +0200");
+            testM.setConversationId("rock_agent0");
+            byte[] data = mCod.encode(testM, "ASCII");
+            File outFile = new File("/home/satia/jade");
+            OutputStream outStream = new FileOutputStream(outFile);
+            outStream.write(data);
+            outStream.close();
+            System.out.println("Wrote: " + testM);
+            //
+            
             // Print Envelope (TODO Bitefficient?)
             writer.print(envStr);
             // Print message
@@ -169,5 +186,5 @@ public class TcpMtp implements MTP {
     }
 }
 // dfki.transterra.jade.mtp.TcpMtp
-// tcp://10.250.7.7:37931
+// tcp://10.250.7.7:37222
 

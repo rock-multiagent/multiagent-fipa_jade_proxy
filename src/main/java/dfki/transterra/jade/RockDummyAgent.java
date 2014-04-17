@@ -8,7 +8,9 @@ package dfki.transterra.jade;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.lang.acl.ACLCodec;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.StringACLCodec;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -60,16 +62,15 @@ public class RockDummyAgent extends Agent {
                     }
 
                     logger.log(Level.INFO, "Forwarding msg to Rock: {0}", msg);
-                    
-                    msg.setDefaultEnvelope();
-                    // TODO set env representation
-                    
-                    logger.log(Level.INFO, "Envelope: {0}", msg.getEnvelope());
 
                     try {
                         Socket socket = new Socket(rockSocketIP, rockSocketPort);
                         PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                        writer.println(msg.toString());
+                        
+                        ACLCodec codec = new StringACLCodec();
+                        byte[] bytes = codec.encode(msg, "ASCII");
+                        
+                        writer.println(new String(bytes));
                         // Include EOF
                         writer.print(-1);
                         socket.close();
