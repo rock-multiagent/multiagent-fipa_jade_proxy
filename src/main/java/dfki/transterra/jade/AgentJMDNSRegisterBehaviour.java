@@ -41,7 +41,7 @@ public class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
         AMSSubscriber.EventHandler removeAgentEH = new AMSSubscriber.EventHandler() {
             public void handle(Event event) {
                 DeadAgent da = (DeadAgent) event;
-                    // We unregister in any case:
+                // We unregister in any case:
                 // It was a RockDummyAgent: the JMDNS entry will already be deleted
                 // It was a JADE Agent: we delete the entry
                 jmdnsManager.unregisterJadeAgent(da.getAgent().getLocalName());

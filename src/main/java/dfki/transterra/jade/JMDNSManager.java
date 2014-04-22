@@ -7,13 +7,16 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceInfo.Fields;
 import javax.jmdns.ServiceListener;
 
 /**
@@ -40,9 +43,9 @@ public class JMDNSManager {
      */
     private static final Logger logger = Logger.getLogger(JMDNSManager.class.getName());
 
-    private JmDNS jmdns;
-    private InetAddress inetAddress;
-    private int jadeSocketPort;
+    private final JmDNS jmdns;
+    private final InetAddress inetAddress;
+    private final int jadeSocketPort;
 
     public static InetAddress getLocalIPv4Address() throws SocketException {
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -74,6 +77,7 @@ public class JMDNSManager {
      * @param rockProxyMTSPort the port the jadeSocketPort listens on.
      * @param listener a listener that performs JADE relevant actions when
      * services are added or removed.
+     * @throws IOException if an error occurs
      */
     public JMDNSManager(int rockProxyMTSPort, ServiceListener listener) throws IOException {
         this.jadeSocketPort = rockProxyMTSPort;
@@ -94,15 +98,25 @@ public class JMDNSManager {
      */
     public void registerJadeAgent(String localname) {
         try {
-            HashMap<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<String, String>();
             properties.put("DESCRIPTION", JMDNS_DESCRIPTION);
             properties.put("TYPE", "mts_client");
             properties.put("LOCATOR", "tcp://" + inetAddress.getHostAddress() + ":"
                     + jadeSocketPort + " JadeProxyAgent");
             properties.put("TIMESTAMP", JMDNS_DATE_FORMAT.format(GregorianCalendar.getInstance().getTime()));
+            
+            // _fipa_service_directory._udp.local.
+//            Map<Fields,String> qualifiedNameMap = new EnumMap<Fields, String>(Fields.class);
+//            qualifiedNameMap.put(Fields.Application, "fipa_service_directory");
+//            qualifiedNameMap.put(Fields.Domain, "local");
+//            qualifiedNameMap.put(Fields.Instance, localname + "@1.234:1099/JADE");
+//            qualifiedNameMap.put(Fields.Protocol, "udp");
+//            ServiceInfo si = ServiceInfo.create(qualifiedNameMap, 
+//                    jadeSocketPort, 1, 1, true, properties);
 
             ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, localname,
                     jadeSocketPort, 1, 1, true, properties);
+            
             
             jmdns.registerService(si);
             logger.log(Level.INFO, "JMDNS registerered {0}", si.getQualifiedName());

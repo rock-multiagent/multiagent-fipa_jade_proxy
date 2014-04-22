@@ -10,18 +10,24 @@ import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
 import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
+import jade.lang.acl.ACLCodec;
 import jade.lang.acl.ACLMessage;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -159,11 +165,20 @@ public class TcpMtp implements MTP {
             testM.setContent("test-content from rock_agent to jadeProxyAgent 2014-04-17 14:34:04 +0200");
             testM.setConversationId("rock_agent0");
             byte[] data = mCod.encode(testM, "ASCII");
-            File outFile = new File("/home/satia/jade");
-            OutputStream outStream = new FileOutputStream(outFile);
-            outStream.write(data);
-            outStream.close();
-            System.out.println("Wrote: " + testM);
+            File outFile = new File("/home/satia/rockjade/jade");
+            //OutputStream outStream = new FileOutputStream(outFile);
+            //outStream.write(data);
+            //outStream.close();
+            //System.out.println("Wrote: " + testM);
+            //
+            File inFile = new File("/home/satia/rockjade/jade");
+            byte[] inData = Files.readAllBytes(inFile.toPath());
+            try {
+                System.out.println(mCod.decode(inData, "ASCII"));
+                
+            } catch (ACLCodec.CodecException ex) {
+                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
+            }
             //
             
             // Print Envelope (TODO Bitefficient?)
@@ -186,5 +201,5 @@ public class TcpMtp implements MTP {
     }
 }
 // dfki.transterra.jade.mtp.TcpMtp
-// tcp://10.250.7.7:37222
+// tcp://10.250.3.30:33343
 
