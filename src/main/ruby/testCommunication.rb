@@ -37,7 +37,7 @@ Orocos.run "fipa_services_test"  do
         #msg.addReceiver(FIPA::AgentId.new(this_agent))
         
         msg.setSender(FIPA::AgentId.new(this_agent))
-        msg.setConversationID("rock_agent0")
+        msg.setConversationID("rock_agent_cid")
 
         env = FIPA::ACLEnvelope.new
         env.insert(msg, FIPARepresentation::BITEFFICIENT)

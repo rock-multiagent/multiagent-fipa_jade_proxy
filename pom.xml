@@ -32,10 +32,12 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
+        <!--This one is not yet n tilab's repo and must be downloaded manually.
+            Alternatively, use jade-4.3.1 -->
         <dependency>
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
-            <version>4.3.1</version>
+            <version>4.3.2</version>
         </dependency>
         <dependency>
             <artifactId>jade-addon-fipa-bit-efficient-aclcodec</artifactId>

@@ -28,60 +28,38 @@ import javax.jmdns.ServiceListener;
 public class JadeProxyAgent extends Agent {
 
     /**
-     * Listens for added/removed JMDNS services. Adds/removes corresponding
-     * RockDummyAgents, unless it was a JADE agent that we registered ourselves.
+     * Adds/removes corresponding RockDummyAgents.
      */
-    public class JadeProxyServiceListener implements ServiceListener {
+    public class JadeProxyServiceListener extends AbstractJadeJMDNSServiceListener {
 
-        public void serviceAdded(ServiceEvent event) {
-            
-            // If it is a ROCK agent, we must create a RockDummyAgent,
-            // if it is a JADE agent, we must not do anything.
+        public JadeProxyServiceListener() {
+            super(JadeProxyAgent.this);
+        }
+
+        @Override
+        public void handleAddedRockAgent(String address, String agentName) {
+            // now extract IP and port
+            String[] parts = address.split(":");
+            if (parts.length != 2) {
+                logger.log(Level.INFO, "Malformed tcp endpoint: {0}",
+                        address);
+                return;
+            }
+
+            Agent rockDummyAgent = new RockDummyAgent();
             try {
-                getContainerController().getAgent(event.getName());
-                // The agent was found, it is a JADE agent
-            } catch (ControllerException ex) {
-                // This means it's a ROCK agent
-                logger.log(Level.INFO, "Foreign agent appeared: {0}",
-                        new String[]{event.getName()});
-                
-                // event.getInfo() does not suffice, service must be resolved
-                ServiceInfo info = event.getDNS().getServiceInfo(event.getType(),
-                        event.getName());
-                
-                // Get the TXT LOCATOR
-                String locators = info.getPropertyString("LOCATOR");
-                // And parse the tcp address, if any
-                String endpoint = getTCPResolverAddress(locators);
-                if(endpoint == null) {
-                    logger.log(Level.INFO, "Unknown agent without (valid) tcp locator: {0}",
-                            event.getName());
-                    return;
-                }
-                
-                // now extract IP and port
-                String[] parts = endpoint.split(":");
-                if(parts.length != 2) {
-                    logger.log(Level.INFO, "Malformed tcp endpoint: {0}",
-                            endpoint);
-                    return;
-                }
-                
-                Agent rockDummyAgent = new RockDummyAgent();
-                try {
-                    rockDummyAgent.setArguments(parts);
-                    
-                    AgentController dummyControl = getContainerController().
-                            acceptNewAgent(event.getName(), rockDummyAgent);
-                    dummyControl.start();
-                } catch (StaleProxyException ex0) {
-                    logger.log(Level.WARNING, "Could not add RockProxyAgent to the container.", ex0);
-                }
+                rockDummyAgent.setArguments(parts);
+
+                AgentController dummyControl = getContainerController().
+                        acceptNewAgent(agentName, rockDummyAgent);
+                dummyControl.start();
+            } catch (StaleProxyException ex0) {
+                logger.log(Level.WARNING, "Could not add RockProxyAgent to the container.", ex0);
             }
         }
 
         public void serviceRemoved(ServiceEvent event) {
-            // If it was a ROCK agent, we must delete the RockDummyAgent,
+        // If it was a ROCK agent, we must delete the RockDummyAgent,
             // if it was a JADE agent, we must not do anything.
             try {
                 getContainerController().getAgent(event.getName());
@@ -99,10 +77,6 @@ public class JadeProxyAgent extends Agent {
             } catch (ControllerException ex) {
                 // The agent is already removed, it was a JADE agent
             }
-        }
-
-        public void serviceResolved(ServiceEvent event) {
-            //logger.log(Level.INFO, "Resolved {0}", event.getName());
         }
     }
 
@@ -138,10 +112,10 @@ public class JadeProxyAgent extends Agent {
     protected void setup() {
         try {
             Object[] args = getArguments();
-            if(args == null || args.length < 1) {
+            if (args == null || args.length < 1) {
                 throw new Exception();
             }
-            
+
             jadeSocketPort = Integer.parseInt(args[0].toString());
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Bad/no port argument provided", e);
@@ -204,7 +178,7 @@ public class JadeProxyAgent extends Agent {
                         // Parse message
                         ACLParser parser = new ACLParser(socket.getInputStream());
                         msg = parser.Message();
-                        logger.log(Level.INFO, "Received on socket: {0}", msg.toString());
+                        logger.log(Level.INFO, "Message received on socket: {0}", msg.toString());
                     } finally {
                         socket.close();
                         logger.log(Level.FINE, "Closed connection");
@@ -245,33 +219,5 @@ public class JadeProxyAgent extends Agent {
             // accept threw an exception. Could also be due to takeDown
             logger.log(Level.SEVERE, "Socket accept threw (could be due to takeDown): ", e);
         }
-    }
-    
-    /**
-     * From a semicolon-separated list of locators, extracts the first
- TCP endpoint's address and port in the format "IP:port".
-     * @param locators the locators
-     * @return the endpoint.
-     */
-    private String getTCPResolverAddress(String locators) {
-        if(locators == null) {
-            return null;
-        }
-        final String prefix = "tcp://";
-        
-        String[] locatorsArray = locators.split(";");
-        for(String locator : locatorsArray) {
-            // XXX also check for "fipa::services::message_transport::SocketTransport" ?
-            if(locator.startsWith(prefix)) {
-                // Cut last part, cut "tcp://"
-                String[] locatorParts = locator.split(" ");
-                if(locatorParts.length < 2) {
-                    return null;
-                }
-                
-                return locatorParts[0].substring(prefix.length());
-            }
-        }
-        return null;
     }
 }

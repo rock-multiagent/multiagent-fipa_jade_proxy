@@ -7,7 +7,9 @@ package dfki.transterra.jade.mtp;
 
 import cascom.fipa.acl.BitEffACLCodec;
 import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
+import dfki.transterra.jade.RockDummyAgent;
 import jade.core.AID;
+import jade.core.Agent;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLCodec;
@@ -15,6 +17,9 @@ import jade.lang.acl.ACLMessage;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
+import jade.wrapper.AgentController;
+import jade.wrapper.ControllerException;
+import jade.wrapper.StaleProxyException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,6 +37,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 
 /**
  *
@@ -181,7 +189,6 @@ public class TcpMtp implements MTP {
             }
             //
             
-            // Print Envelope (TODO Bitefficient?)
             writer.print(envStr);
             // Print message
             writer.println(new String(bytes));

@@ -30,7 +30,6 @@ public class TcpAddress implements TransportAddress {
      * @throws UnknownHostException if str is malformed or the Host is unknown.
      */
     public TcpAddress(String str) throws UnknownHostException {
-        // TODO
         String[] parts = str.split("/");
         if (parts.length != 2) {
             throw new UnknownHostException("Malformed TCP address: " + str);

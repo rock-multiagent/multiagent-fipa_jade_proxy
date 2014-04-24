@@ -141,8 +141,6 @@ public class TcpServer {
      * 
      * TODO Workarounds:
      * 
-     * msg + env with msg sent => msg sent twice
-     * 
      * payload length not set by rock 
      */
     private void acceptConnectionsAndForward() {
@@ -185,8 +183,6 @@ public class TcpServer {
                     System.err.println("len: " + envByteLen);
                     // FIXME no works!
                     byte[] msgData = Arrays.copyOfRange(dataIn, 341, dataIn.length);
-                    // Modify 2nd byte (version number 1.0)
-                    msgData[1] = 0x10;
 
                     File outFile = new File("/home/satia/rockjade/rock");
                     OutputStream outStream = new FileOutputStream(outFile);
@@ -196,12 +192,13 @@ public class TcpServer {
                     // Re-encode message as in String encoding
                     BitEffACLCodec mCodBE = new BitEffACLCodec();
                     msg = mCodBE.decode(msgData, "ASCII");
-                    logger.log(Level.INFO, "Decoded msg: {0}", msg);
+                    
                     
                     // FIXME
                     env.addIntendedReceiver(new AID("da0", false));
                     msg.addReceiver(new AID("da0", false));
                     //
+                    logger.log(Level.INFO, "Decoded msg: {0}", msg);
                     
                     msgData = msg.toString().getBytes();
 

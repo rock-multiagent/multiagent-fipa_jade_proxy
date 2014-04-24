@@ -2,12 +2,19 @@ package dfki.transterra.jade;
 
 import dfki.transterra.jade.mtp.TcpMtp;
 import dfki.transterra.jade.mtp.TcpServer;
+import jade.core.AID;
 import jade.core.Agent;
+import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAException;
 import jade.mtp.MTPException;
+import jade.wrapper.AgentController;
+import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.jmdns.ServiceEvent;
 
 /**
  * Handles the JMDNS/avahi subscriptions and installs the TcpMtp.
@@ -15,6 +22,7 @@ import java.util.logging.Logger;
  * @author Satia Herfert
  */
 public class TcpMtpAgent extends Agent {
+
     /**
      * The Logger.
      */
@@ -45,16 +53,16 @@ public class TcpMtpAgent extends Agent {
             doDelete();
             return;
         }
-        
+
         try {
-            jmdnsManager = new JMDNSManager(TcpServer.DEFAULT_PORT, null);
+            jmdnsManager = new JMDNSManager(TcpServer.DEFAULT_PORT,  null);
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error initializing JMDNS", ex);
             // In the case of an exception here, we cannot function properly
             doDelete();
             return;
         }
-        
+
         logger.log(Level.INFO, "TcpMtpAgent {0}: starting", getLocalName());
         this.addBehaviour(new AgentJMDNSRegisterBehaviour(jmdnsManager));
     }
