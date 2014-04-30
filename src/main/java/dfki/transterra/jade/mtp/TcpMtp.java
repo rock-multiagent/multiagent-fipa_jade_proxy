@@ -12,11 +12,14 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
+import jade.domain.FIPAAgentManagement.Property;
+import jade.domain.FIPAAgentManagement.ReceivedObject;
 import jade.lang.acl.ACLCodec;
 import jade.lang.acl.ACLMessage;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
+import jade.mtp.http.XMLCodec;
 import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
@@ -33,6 +36,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -154,44 +158,30 @@ public class TcpMtp implements MTP {
         try {
             Socket socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-
-            BitEfficientEnvelopeCodec codec = new BitEfficientEnvelopeCodec();
-            String envStr = "";
-            try {
-                envStr = new String(codec.encode(envlp));
-            } catch (Exception ex) {
-                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
-            }
             
-            // FIXME Test
-            // (inform:sender(agent-identifier:namerock_agent):receiver(set(agent-identifier:namejadeProxyAgent))
-            // :content#72"test-content from rock_agent to jadeProxyAgent 2014-04-17 14:34:04 +0200:conversation-id(rock_agent0))
-            BitEffACLCodec mCod = new BitEffACLCodec();
-            ACLMessage testM = new ACLMessage(ACLMessage.INFORM);
-            testM.setSender(new AID("rock_agent", true));
-            testM.addReceiver(new AID("jadeProxyAgent", true));
-            testM.setContent("test-content from rock_agent to jadeProxyAgent 2014-04-17 14:34:04 +0200");
-            testM.setConversationId("rock_agent0");
-            byte[] data = mCod.encode(testM, "ASCII");
-            File outFile = new File("/home/satia/rockjade/jade");
-            //OutputStream outStream = new FileOutputStream(outFile);
-            //outStream.write(data);
-            //outStream.close();
-            //System.out.println("Wrote: " + testM);
-            //
-            File inFile = new File("/home/satia/rockjade/jade");
-            byte[] inData = Files.readAllBytes(inFile.toPath());
-            try {
-                System.out.println(mCod.decode(inData, "ASCII"));
-                
-            } catch (ACLCodec.CodecException ex) {
-                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            //
+            // FIXME modify the envelope interestingly
+            ReceivedObject ro = new ReceivedObject();
+            ro.setBy("recv_by");
+            ro.setDate(Date.valueOf("1991-03-05"));
+            ro.setFrom("recv_from");
+            ro.setId("recv_id");
+            ro.setVia("recv_via");
+            Property property = new Property("X-userdef0", "test value");
             
-            writer.print(envStr);
-            // Print message
+            envlp.setComments("The is a comment");
+            envlp.setReceived(ro);
+            envlp.addStamp(ro);
+            envlp.addProperties(property);
+            
+            // First send envelope in XML encoding
+            String xmlEnv = XMLCodec.encodeXML(envlp);
+            writer.print(xmlEnv);
+            System.out.println(xmlEnv);
+            
+            // And now message (bytes) TODO use output stream directly, not string!
             writer.println(new String(bytes));
+            System.out.println(new String(bytes));
+            
             // Include EOF
             writer.print(-1);
             socket.close();
