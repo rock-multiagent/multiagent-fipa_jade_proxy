@@ -23,6 +23,8 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.ACLParser;
 import jade.lang.acl.ParseException;
 import jade.mtp.InChannel;
+import jade.mtp.MTPException;
+import jade.mtp.http.XMLCodec;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -51,6 +54,11 @@ public class TcpServer {
      * The default port.
      */
     public static final int DEFAULT_PORT = 6789;
+    
+    /**
+     * The XML parser implementation class.
+     */
+    public static final String XML_PARSER_CLASS = "org.apache.crimson.parser.XMLReaderImpl";
     /**
      * The Logger.
      */
@@ -138,79 +146,67 @@ public class TcpServer {
 
     /**
      * Accepts connections, de-serializes the envelopes and dispatches them.
-     * 
-     * TODO Workarounds:
-     * 
-     * payload length not set by rock 
      */
     private void acceptConnectionsAndForward() {
         try {
             while (true) {
                 Socket socket = serverSocket.accept();
                 logger.log(Level.FINE, "Accepted a new connection");
+                
                 ACLMessage msg;
+                Envelope env;
+                String input;
+                
                 try {
-                    byte[] dataIn;
                     try {
-                        // Convert the input to a byte array.
-                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        int nRead;
-                        byte[] data = new byte[16384];
-                        while ((nRead = socket.getInputStream().read(data, 0, data.length)) != -1) {
-                            buffer.write(data, 0, nRead);
+                        BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(socket.getInputStream()));
+                        StringBuilder builder = new StringBuilder();
+                        
+                        String line;
+                        while((line = reader.readLine()) != null) {
+                            builder.append(line);
                         }
-                        buffer.flush();
-                        dataIn = buffer.toByteArray();
+                        input = builder.toString();
                     } finally {
                         socket.close();
                         logger.log(Level.FINE, "Closed connection");
                     }
-
+                    
+                    // XXX this is not robust!
+                    // Find end of the envelope ("</envelope>")
+                    String splitter = "</envelope>";
+                    String [] parts = input.split(splitter);
+                    StringReader envReader = new StringReader(parts[0] + splitter);
+                    StringReader msgReader = new StringReader(parts[1]);
+                    
                     // Parse envelope
-                    EnvelopeDecoder decoder = new EnvelopeDecoder();
-                    EnvelopeEncoder encoder = new EnvelopeEncoder();
-                    Envelope env = decoder.getEnvelope(dataIn);
+                    XMLCodec xmlCodec = new XMLCodec(XML_PARSER_CLASS);
+                    env = xmlCodec.parse(envReader);
+
+                    // Parse message TODO this can be skipped and the bytes
+                    // of parts[1] can be forwarded directly, if
+                    // local/global names issue has been solved.
+                    ACLParser aclParser = new ACLParser(msgReader);
+                    msg = aclParser.parse(msgReader);
 
                     logger.log(Level.INFO, "Decoded env: {0}", env);
-
-                    // Modify envelope
-                    env.setAclRepresentation(FIPANames.ACLCodec.STRING);
-                    int envByteLen = encoder.encode(env).length();
-//                    byte[] msgData = msg.toString().getBytes();
-//                    env.setPayloadLength((long)msgData.length);
-                    
-                    env.setPayloadLength((long) dataIn.length - 341);
-                    System.err.println("len: " + envByteLen);
-                    // FIXME no works!
-                    byte[] msgData = Arrays.copyOfRange(dataIn, 341, dataIn.length);
-
-                    File outFile = new File("/home/satia/rockjade/rock");
-                    OutputStream outStream = new FileOutputStream(outFile);
-                    outStream.write(msgData);
-                    outStream.close();
-
-                    // Re-encode message as in String encoding
-                    BitEffACLCodec mCodBE = new BitEffACLCodec();
-                    msg = mCodBE.decode(msgData, "ASCII");
-                    
                     
                     // FIXME
                     env.addIntendedReceiver(new AID("da0", false));
                     msg.addReceiver(new AID("da0", false));
                     //
                     logger.log(Level.INFO, "Decoded msg: {0}", msg);
-                    
-                    msgData = msg.toString().getBytes();
 
                     // dispatch envelope
-                    dispatcher.dispatchMessage(env, msgData);
+                    dispatcher.dispatchMessage(env, msg.toString().getBytes());
 
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Socket io threw: ", e);
-                } catch (BEParseException e) {
-                    logger.log(Level.WARNING, "Socket parsing threw: ", e);
-                } catch (CodecException ex) {
-                    Logger.getLogger(TcpServer.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (MTPException e) {
+                    logger.log(Level.WARNING, "Envelope parser threw: ", e);
+                } catch (ParseException e) {
+                    logger.log(Level.WARNING, "Message parser threw: ", e);
                 }
             }
         } catch (IOException e) {

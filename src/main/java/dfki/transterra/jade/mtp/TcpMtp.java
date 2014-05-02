@@ -175,7 +175,7 @@ public class TcpMtp implements MTP {
             
             // First send envelope in XML encoding
             String xmlEnv = XMLCodec.encodeXML(envlp);
-            writer.print(xmlEnv);
+            writer.println(xmlEnv);
             System.out.println(xmlEnv);
             
             // And now message (bytes) TODO use output stream directly, not string!
@@ -183,7 +183,7 @@ public class TcpMtp implements MTP {
             System.out.println(new String(bytes));
             
             // Include EOF
-            writer.print(-1);
+            //writer.print(-1);
             socket.close();
         } catch (IOException e) {
             logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);

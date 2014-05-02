@@ -55,9 +55,9 @@ public class JMDNSManager {
                 continue;
             }
             // Only use eth, not wlan
-            if (!current.getName().startsWith("eth")) {
-                continue;
-            }
+            //if (!current.getName().startsWith("eth")) {
+            //    continue;
+            //}
 
             Enumeration<InetAddress> addresses = current.getInetAddresses();
             while (addresses.hasMoreElements()) {
