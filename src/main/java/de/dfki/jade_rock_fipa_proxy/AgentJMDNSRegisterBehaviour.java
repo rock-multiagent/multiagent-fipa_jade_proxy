@@ -33,7 +33,7 @@ public class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
                 BornAgent ba = (BornAgent) event;
                 // We must only register JADE agents, not RockDummyAgents
                 if (!ba.getClassName().equals(RockDummyAgent.class.getName())) {
-                    jmdnsManager.registerJadeAgent(ba.getAgent().getLocalName());
+                    jmdnsManager.registerJadeAgent(ba.getAgent().getName());
                 }
             }
         };
@@ -44,7 +44,7 @@ public class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
                 // We unregister in any case:
                 // It was a RockDummyAgent: the JMDNS entry will already be deleted
                 // It was a JADE Agent: we delete the entry
-                jmdnsManager.unregisterJadeAgent(da.getAgent().getLocalName());
+                jmdnsManager.unregisterJadeAgent(da.getAgent().getName());
             }
         };
 

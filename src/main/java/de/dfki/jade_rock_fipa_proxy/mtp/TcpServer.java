@@ -187,30 +187,33 @@ public class TcpServer {
                     // Parse envelope
                     XMLCodec xmlCodec = new XMLCodec(XML_PARSER_CLASS);
                     env = xmlCodec.parse(envReader);
-
-                    // Parse message TODO this can be skipped and the bytes
-                    // of parts[1] can be forwarded directly, if
-                    // local/global names issue has been solved.
-                    ACLParser aclParser = new ACLParser(msgReader);
-                    msg = aclParser.parse(msgReader);
-
                     logger.log(Level.INFO, "Decoded env: {0}", env);
+
+                    // Optional message parsing:
+                    //ACLParser aclParser = new ACLParser(msgReader);
+                    //msg = aclParser.parse(msgReader);
+                    //logger.log(Level.INFO, "Decoded msg: {0}", msg);
                     
-                    // FIXME
-                    env.addIntendedReceiver(new AID("da0", false));
-                    msg.addReceiver(new AID("da0", false));
-                    //
-                    logger.log(Level.INFO, "Decoded msg: {0}", msg);
+                    // Modify receivers
+                    // FIXME triple intended receivers from Rock
+                    ArrayList<AID> newRecvs = new ArrayList<AID>();
+                    Iterator<AID> i = env.getAllIntendedReceiver();
+                    while (i.hasNext()) {
+                        AID aid = i.next();
+                        newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                    }
+                    env.clearAllIntendedReceiver();
+                    for (AID aid : newRecvs) {
+                        env.addIntendedReceiver(aid);
+                    }
 
                     // dispatch envelope
-                    dispatcher.dispatchMessage(env, msg.toString().getBytes());
+                    dispatcher.dispatchMessage(env, parts[1].getBytes());
 
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Socket io threw: ", e);
                 } catch (MTPException e) {
                     logger.log(Level.WARNING, "Envelope parser threw: ", e);
-                } catch (ParseException e) {
-                    logger.log(Level.WARNING, "Message parser threw: ", e);
                 } catch(ArrayIndexOutOfBoundsException e) {
                     logger.log(Level.WARNING, "No proper plitting of envelope and message possible. ");
                 }

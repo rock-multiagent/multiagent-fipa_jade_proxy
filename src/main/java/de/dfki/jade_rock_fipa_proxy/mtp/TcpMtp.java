@@ -37,7 +37,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -158,6 +160,10 @@ public class TcpMtp implements MTP {
         try {
             Socket socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+            
+            // Modify sender
+            envlp.setFrom(new AID(envlp.getFrom().getName().
+                    replaceAll("\\.", "-dot-"), true));
                         
             // First send envelope in XML encoding
             String xmlEnv = XMLCodec.encodeXML(envlp);

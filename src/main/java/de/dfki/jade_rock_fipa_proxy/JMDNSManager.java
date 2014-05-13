@@ -94,9 +94,9 @@ public class JMDNSManager {
     /**
      * Registers a local JADE agent
      *
-     * @param localname its name
+     * @param name its name
      */
-    public void registerJadeAgent(String localname) {
+    public void registerJadeAgent(String name) {
         try {
             Map<String, String> properties = new HashMap<String, String>();
             properties.put("DESCRIPTION", JMDNS_DESCRIPTION);
@@ -109,12 +109,15 @@ public class JMDNSManager {
 //            Map<Fields,String> qualifiedNameMap = new EnumMap<Fields, String>(Fields.class);
 //            qualifiedNameMap.put(Fields.Application, "fipa_service_directory");
 //            qualifiedNameMap.put(Fields.Domain, "local");
-//            qualifiedNameMap.put(Fields.Instance, localname + "@1.234:1099/JADE");
+//            qualifiedNameMap.put(Fields.Instance, name + "@1.234:1099/JADE");
 //            qualifiedNameMap.put(Fields.Protocol, "udp");
 //            ServiceInfo si = ServiceInfo.create(qualifiedNameMap, 
 //                    jadeSocketPort, 1, 1, true, properties);
 
-            ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, localname,
+            // JMDNS cannot handle dots in the service name. They are being
+            // replaced.
+            ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, 
+                    name.replaceAll("\\.", "-dot-"),
                     jadeSocketPort, 1, 1, true, properties);
             
             jmdns.registerService(si);
@@ -127,15 +130,15 @@ public class JMDNSManager {
     /**
      * Unregisters a local JADE agent
      *
-     * @param localname its name
+     * @param name its name
      */
-    public void unregisterJadeAgent(String localname) {
-        ServiceInfo si = jmdns.getServiceInfo(JMDNS_TYPE, localname);
+    public void unregisterJadeAgent(String name) {
+        ServiceInfo si = jmdns.getServiceInfo(JMDNS_TYPE, name);
         if (si != null) {
             jmdns.unregisterService(si);
-            logger.log(Level.INFO, "JMDNS unregisterered {0}", localname);
+            logger.log(Level.INFO, "JMDNS unregisterered {0}", name.replaceAll("-dot-", "."));
         } else {
-            logger.log(Level.INFO, "JMDNS already unregistered: {0}", localname);
+            logger.log(Level.INFO, "JMDNS already unregistered: {0}", name);
         }
     }
 
