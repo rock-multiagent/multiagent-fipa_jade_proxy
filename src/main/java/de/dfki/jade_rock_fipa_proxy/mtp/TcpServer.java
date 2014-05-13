@@ -3,16 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package dfki.transterra.jade.mtp;
+package de.dfki.jade_rock_fipa_proxy.mtp;
 
-import cascom.fipa.acl.ACLDecoder;
-import cascom.fipa.acl.ACLEncoder;
-import cascom.fipa.acl.BEParseException;
-import cascom.fipa.acl.BitEffACLCodec;
-import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
-import cascom.fipa.envelope.EnvelopeDecoder;
-import cascom.fipa.envelope.EnvelopeEncoder;
-import dfki.transterra.jade.JMDNSManager;
+//import cascom.fipa.acl.ACLDecoder;
+//import cascom.fipa.acl.ACLEncoder;
+//import cascom.fipa.acl.BEParseException;
+//import cascom.fipa.acl.BitEffACLCodec;
+//import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
+//import cascom.fipa.envelope.EnvelopeDecoder;
+//import cascom.fipa.envelope.EnvelopeEncoder;
+import de.dfki.jade_rock_fipa_proxy.JMDNSManager;
 import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
@@ -157,6 +157,8 @@ public class TcpServer {
                 Envelope env;
                 String input;
                 
+                // XXX This can destroy bit-efficient encoding. One should read
+                // into a byte[]
                 try {
                     try {
                         BufferedReader reader = new BufferedReader(
@@ -172,6 +174,8 @@ public class TcpServer {
                         socket.close();
                         logger.log(Level.FINE, "Closed connection");
                     }
+                    
+                    logger.log(Level.INFO, "Got: {0}", input);
                     
                     // XXX this is not robust!
                     // Find end of the envelope ("</envelope>")
@@ -207,6 +211,8 @@ public class TcpServer {
                     logger.log(Level.WARNING, "Envelope parser threw: ", e);
                 } catch (ParseException e) {
                     logger.log(Level.WARNING, "Message parser threw: ", e);
+                } catch(ArrayIndexOutOfBoundsException e) {
+                    logger.log(Level.WARNING, "No proper plitting of envelope and message possible. ");
                 }
             }
         } catch (IOException e) {

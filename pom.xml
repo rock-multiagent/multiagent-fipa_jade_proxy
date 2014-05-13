@@ -2,12 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>dfki</groupId>
-    <artifactId>transterra.jade</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <groupId>de.dfki</groupId>
+    <artifactId>jade-rock-fipa-proxy</artifactId>
+    <version>0.0.1</version>
     <packaging>jar</packaging>
 
-    <name>transterra.jade</name>
+    <name>jade-rock-fipa-proxy</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -32,13 +32,14 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-        <!--This one is not yet n tilab's repo and must be downloaded manually.
+        <!--4.3.2. is not yet in tilab's repo and must be downloaded manually.
             Alternatively, use jade-4.3.1 -->
         <dependency>
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
-            <version>4.3.2</version>
+            <version>4.3.1</version>
         </dependency>
+        <!--
         <dependency>
             <artifactId>jade-addon-fipa-bit-efficient-aclcodec</artifactId>
             <groupId>jade-framework</groupId>
@@ -49,6 +50,7 @@
             <groupId>jade-framework</groupId>
             <version>4.0.1-M1-RELEASE</version>
         </dependency>
+        -->
         <dependency>
             <groupId>javax.jmdns</groupId>
             <artifactId>jmdns</artifactId>

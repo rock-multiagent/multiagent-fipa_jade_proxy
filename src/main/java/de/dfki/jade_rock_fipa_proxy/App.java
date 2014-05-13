@@ -1,4 +1,4 @@
-package dfki.transterra.jade;
+package de.dfki.jade_rock_fipa_proxy;
 
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;

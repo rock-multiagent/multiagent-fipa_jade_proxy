@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package dfki.transterra.jade.mtp;
+package de.dfki.jade_rock_fipa_proxy.mtp;
 
 import jade.mtp.TransportAddress;
 import java.net.InetAddress;

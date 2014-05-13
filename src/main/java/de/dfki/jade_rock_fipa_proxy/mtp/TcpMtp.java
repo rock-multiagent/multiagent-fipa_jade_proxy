@@ -3,11 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package dfki.transterra.jade.mtp;
+package de.dfki.jade_rock_fipa_proxy.mtp;
 
-import cascom.fipa.acl.BitEffACLCodec;
-import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
-import dfki.transterra.jade.RockDummyAgent;
+//import cascom.fipa.acl.BitEffACLCodec;
+//import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
+import de.dfki.jade_rock_fipa_proxy.RockDummyAgent;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Profile;
@@ -158,27 +158,13 @@ public class TcpMtp implements MTP {
         try {
             Socket socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            
-            // FIXME modify the envelope interestingly
-            ReceivedObject ro = new ReceivedObject();
-            ro.setBy("recv_by");
-            ro.setDate(Date.valueOf("1991-03-05"));
-            ro.setFrom("recv_from");
-            ro.setId("recv_id");
-            ro.setVia("recv_via");
-            Property property = new Property("X-userdef0", "test value");
-            
-            envlp.setComments("The is a comment");
-            envlp.setReceived(ro);
-            envlp.addStamp(ro);
-            envlp.addProperties(property);
-            
+                        
             // First send envelope in XML encoding
             String xmlEnv = XMLCodec.encodeXML(envlp);
             writer.println(xmlEnv);
             System.out.println(xmlEnv);
             
-            // And now message (bytes) TODO use output stream directly, not string!
+            // And now message (bytes) XXX use output stream directly, not string!
             writer.println(new String(bytes));
             System.out.println(new String(bytes));
             
@@ -197,6 +183,4 @@ public class TcpMtp implements MTP {
         }
     }
 }
-// dfki.transterra.jade.mtp.TcpMtp
-// tcp://10.250.3.30:33343
 

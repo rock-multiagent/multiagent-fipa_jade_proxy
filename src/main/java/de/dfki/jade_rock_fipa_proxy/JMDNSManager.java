@@ -1,4 +1,4 @@
-package dfki.transterra.jade;
+package de.dfki.jade_rock_fipa_proxy;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -116,7 +116,6 @@ public class JMDNSManager {
 
             ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, localname,
                     jadeSocketPort, 1, 1, true, properties);
-            
             
             jmdns.registerService(si);
             logger.log(Level.INFO, "JMDNS registerered {0}", si.getQualifiedName());

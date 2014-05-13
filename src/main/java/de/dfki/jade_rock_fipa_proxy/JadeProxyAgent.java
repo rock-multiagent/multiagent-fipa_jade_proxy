@@ -1,4 +1,4 @@
-package dfki.transterra.jade;
+package de.dfki.jade_rock_fipa_proxy;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -128,6 +128,7 @@ public class JadeProxyAgent extends Agent {
         try {
             jmdnsManager = new JMDNSManager(jadeSocketPort, new JadeProxyServiceListener());
             serverSocket = new ServerSocket(jadeSocketPort);
+            
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error initializing JMDNS or ServerSocket:", ex);
             // In the case of an exception here, we cannot function properly

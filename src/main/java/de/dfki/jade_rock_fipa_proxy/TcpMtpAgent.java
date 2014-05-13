@@ -1,7 +1,7 @@
-package dfki.transterra.jade;
+package de.dfki.jade_rock_fipa_proxy;
 
-import dfki.transterra.jade.mtp.TcpMtp;
-import dfki.transterra.jade.mtp.TcpServer;
+import de.dfki.jade_rock_fipa_proxy.mtp.TcpMtp;
+import de.dfki.jade_rock_fipa_proxy.mtp.TcpServer;
 import jade.core.Agent;
 import jade.mtp.MTPException;
 import jade.wrapper.StaleProxyException;
