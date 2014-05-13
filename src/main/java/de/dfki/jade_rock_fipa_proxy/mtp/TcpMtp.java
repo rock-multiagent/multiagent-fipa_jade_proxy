@@ -7,45 +7,22 @@ package de.dfki.jade_rock_fipa_proxy.mtp;
 
 //import cascom.fipa.acl.BitEffACLCodec;
 //import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
-import de.dfki.jade_rock_fipa_proxy.RockDummyAgent;
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
-import jade.domain.FIPAAgentManagement.Property;
-import jade.domain.FIPAAgentManagement.ReceivedObject;
-import jade.lang.acl.ACLCodec;
-import jade.lang.acl.ACLMessage;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
 import jade.mtp.http.XMLCodec;
-import jade.wrapper.AgentController;
-import jade.wrapper.ControllerException;
-import jade.wrapper.StaleProxyException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.sql.Date;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
 
 /**
  *

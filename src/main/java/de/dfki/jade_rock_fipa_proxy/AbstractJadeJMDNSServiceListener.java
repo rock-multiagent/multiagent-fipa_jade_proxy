@@ -6,9 +6,7 @@
 package de.dfki.jade_rock_fipa_proxy;
 
 import jade.core.Agent;
-import jade.wrapper.AgentController;
 import jade.wrapper.ControllerException;
-import jade.wrapper.StaleProxyException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jmdns.ServiceEvent;

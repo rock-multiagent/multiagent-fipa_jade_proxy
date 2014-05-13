@@ -17,8 +17,6 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
 
 /**
  * Handles the JMDNS/avahi subscriptions and creates/deletes RockDummyAgents.
