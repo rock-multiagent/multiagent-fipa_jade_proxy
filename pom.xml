@@ -33,7 +33,7 @@
             <scope>test</scope>
         </dependency>
         <!--4.3.2. is not yet in tilab's repo and must be downloaded manually.
-            Alternatively, use jade-4.3.1 -->
+        Alternatively, use jade-4.3.1 -->
         <dependency>
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
