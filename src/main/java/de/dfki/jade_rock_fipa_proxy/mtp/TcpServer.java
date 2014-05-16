@@ -28,7 +28,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,7 +46,7 @@ public class TcpServer {
      * The default port.
      */
     public static final int DEFAULT_PORT = 6789;
-    
+
     /**
      * The XML parser implementation class.
      */
@@ -115,7 +117,7 @@ public class TcpServer {
         new Thread() {
             @Override
             public void run() {
-                acceptConnectionsAndForward();
+                acceptConnections();
             }
         }.start();
     }
@@ -137,76 +139,18 @@ public class TcpServer {
     /**
      * Accepts connections, de-serializes the envelopes and dispatches them.
      */
-    private void acceptConnectionsAndForward() {
+    private void acceptConnections() {
         try {
             while (true) {
-                Socket socket = serverSocket.accept();
-                logger.log(Level.FINE, "Accepted a new connection");
-                
-                ACLMessage msg;
-                Envelope env;
-                String input;
-                
-                // XXX This can destroy bit-efficient encoding. One should read
-                // into a byte[]
-                try {
-                    try {
-                        BufferedReader reader = new BufferedReader(
-                                new InputStreamReader(socket.getInputStream()));
-                        StringBuilder builder = new StringBuilder();
-                        
-                        String line;
-                        while((line = reader.readLine()) != null) {
-                            builder.append(line);
-                        }
-                        input = builder.toString();
-                    } finally {
-                        socket.close();
-                        logger.log(Level.FINE, "Closed connection");
+                final Socket socket = serverSocket.accept();
+                logger.log(Level.INFO, "Accepted a new connection");
+                // Start thread accepting connections
+                new Thread() {
+                    @Override
+                    public void run() {
+                        forward(socket);
                     }
-                    
-                    logger.log(Level.INFO, "Got: {0}", input);
-                    
-                    // XXX this is not robust!
-                    // Find end of the envelope ("</envelope>")
-                    String splitter = "</envelope>";
-                    String [] parts = input.split(splitter);
-                    StringReader envReader = new StringReader(parts[0] + splitter);
-                    StringReader msgReader = new StringReader(parts[1]);
-                    
-                    // Parse envelope
-                    XMLCodec xmlCodec = new XMLCodec(XML_PARSER_CLASS);
-                    env = xmlCodec.parse(envReader);
-                    logger.log(Level.INFO, "Decoded env: {0}", env);
-
-                    // Optional message parsing:
-                    //ACLParser aclParser = new ACLParser(msgReader);
-                    //msg = aclParser.parse(msgReader);
-                    //logger.log(Level.INFO, "Decoded msg: {0}", msg);
-                    
-                    // Modify receivers
-                    // FIXME triple intended receivers from Rock
-                    ArrayList<AID> newRecvs = new ArrayList<AID>();
-                    Iterator<AID> i = env.getAllIntendedReceiver();
-                    while (i.hasNext()) {
-                        AID aid = i.next();
-                        newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
-                    }
-                    env.clearAllIntendedReceiver();
-                    for (AID aid : newRecvs) {
-                        env.addIntendedReceiver(aid);
-                    }
-
-                    // dispatch envelope
-                    dispatcher.dispatchMessage(env, parts[1].getBytes());
-
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Socket io threw: ", e);
-                } catch (MTPException e) {
-                    logger.log(Level.WARNING, "Envelope parser threw: ", e);
-                } catch(ArrayIndexOutOfBoundsException e) {
-                    logger.log(Level.WARNING, "No proper plitting of envelope and message possible. ");
-                }
+                }.start();
             }
         } catch (IOException e) {
             // accept threw an exception. Could also be due to takeDown
@@ -214,4 +158,85 @@ public class TcpServer {
         }
     }
 
+    /**
+     * De-serializes the envelopes and dispatches them.
+     */
+    private void forward(Socket socket) {
+        ACLMessage msg;
+        Envelope env;
+        String input;
+
+        // XXX this is not robust!
+        final String splitter = "</envelope>";
+
+        // XXX This can destroy bit-efficient encoding. One should read
+        // into a byte[]
+        try {
+            try {
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()));
+                StringBuilder buffer = new StringBuilder();
+
+                // Read until the end of the stream XXX
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line);
+                    int index;
+                    if ((index = buffer.indexOf(splitter)) != -1) {
+                        // Include the end tag
+                        index += splitter.length();
+                        // At least the envelope is included, the message may
+                        // still be missing
+                        StringReader envReader = new StringReader(buffer.substring(0, index));
+
+                        // Parse envelope
+                        XMLCodec xmlCodec = new XMLCodec(XML_PARSER_CLASS);
+                        env = xmlCodec.parse(envReader);
+                        logger.log(Level.INFO, "Decoded env: {0}", env);
+
+                        // Modify receivers
+                        // Using a set removes duplicates that occur,
+                        // as Rock and Jade interpret FIPA differently.
+                        // dispatch envelope
+                        Set<AID> newRecvs = new HashSet<AID>();
+                        Iterator<AID> i = env.getAllIntendedReceiver();
+                        while (i.hasNext()) {
+                            AID aid = i.next();
+                            newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                        }
+                        env.clearAllIntendedReceiver();
+                        for (AID aid : newRecvs) {
+                            env.addIntendedReceiver(aid);
+                        }
+
+                        int msgLen = env.getPayloadLength().intValue();
+                        // Keep reading until message is fully included,
+                        // or end of stream is reached
+                        while (buffer.length() < index + msgLen
+                                && (line = reader.readLine()) != null) {
+                            buffer.append(line);
+                        }
+                        
+                        // Optional message parsing:
+                        //StringReader msgReader = new StringReader(parts[1]);
+                        //ACLParser aclParser = new ACLParser(msgReader);
+                        //msg = aclParser.parse(msgReader);
+                        //logger.log(Level.INFO, "Decoded msg: {0}", msg);
+                        // FIXME Exceptions!?
+                        dispatcher.dispatchMessage(env, buffer.substring(index, index + msgLen).getBytes());
+                        
+                        // Remove envelope and message from the buffer
+                        buffer.delete(0, index + msgLen);
+                    }
+                }
+            } finally {
+                socket.close();
+                logger.log(Level.INFO, "Closed connection");
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Socket io threw: ", e);
+        } catch (MTPException e) {
+            logger.log(Level.WARNING, "Envelope parser threw: ", e);
+        }
+    }
 }
