@@ -142,10 +142,13 @@ public class TcpMtp implements MTP {
             envlp.setFrom(new AID(envlp.getFrom().getName().
                     replaceAll("\\.", "-dot-"), true));
                         
+            
             // First send envelope in XML encoding
+            // No line break after the envelope, so that the payload
+            // starts immediately after.
             String xmlEnv = XMLCodec.encodeXML(envlp);
-            writer.println(xmlEnv);
-            System.out.println(xmlEnv);
+            writer.print(xmlEnv);
+            System.out.print(xmlEnv);
             
             // And now message (bytes) XXX use output stream directly, not string!
             writer.println(new String(bytes));

@@ -27,7 +27,6 @@ import java.io.StringReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -170,17 +169,17 @@ public class TcpServer {
         final String splitter = "</envelope>";
 
         // XXX This can destroy bit-efficient encoding. One should read
-        // into a byte[]
+        // into a byte[] instead of char[]
         try {
             try {
                 BufferedReader reader = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
                 StringBuilder buffer = new StringBuilder();
 
-                // Read until the end of the stream XXX
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line);
+                char[] segment = new char[4096];
+                int charsRead;
+                while ((charsRead = reader.read(segment, 0, segment.length)) != -1) {
+                    buffer.append(segment, 0, charsRead);
                     int index;
                     if ((index = buffer.indexOf(splitter)) != -1) {
                         // Include the end tag
@@ -213,8 +212,8 @@ public class TcpServer {
                         // Keep reading until message is fully included,
                         // or end of stream is reached
                         while (buffer.length() < index + msgLen
-                                && (line = reader.readLine()) != null) {
-                            buffer.append(line);
+                                && (charsRead = reader.read(segment, 0, segment.length)) != -1) {
+                            buffer.append(segment, 0, charsRead);
                         }
                         
                         // Optional message parsing:
@@ -222,8 +221,15 @@ public class TcpServer {
                         //ACLParser aclParser = new ACLParser(msgReader);
                         //msg = aclParser.parse(msgReader);
                         //logger.log(Level.INFO, "Decoded msg: {0}", msg);
-                        // FIXME Exceptions!?
-                        dispatcher.dispatchMessage(env, buffer.substring(index, index + msgLen).getBytes());
+                        
+                        if(buffer.length() < index + msgLen) {
+                            logger.log(Level.WARNING, "Stream only contains {0} chars. Expected {1}",
+                                    new Object[]{buffer.length(), index + msgLen});
+                            
+                        } else {
+                            logger.log(Level.INFO, "Dispatching message string: {0}", buffer.substring(index, index + msgLen));
+                            dispatcher.dispatchMessage(env, buffer.substring(index, index + msgLen).getBytes());
+                        }
                         
                         // Remove envelope and message from the buffer
                         buffer.delete(0, index + msgLen);
