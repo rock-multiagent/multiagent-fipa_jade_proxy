@@ -180,8 +180,10 @@ public class TcpServer {
                 int charsRead;
                 while ((charsRead = reader.read(segment, 0, segment.length)) != -1) {
                     buffer.append(segment, 0, charsRead);
+                    
                     int index;
-                    if ((index = buffer.indexOf(splitter)) != -1) {
+                    // As long as a (new) whole envelope is included...
+                    while ((index = buffer.indexOf(splitter)) != -1) {
                         // Include the end tag
                         index += splitter.length();
                         // At least the envelope is included, the message may
@@ -215,22 +217,22 @@ public class TcpServer {
                                 && (charsRead = reader.read(segment, 0, segment.length)) != -1) {
                             buffer.append(segment, 0, charsRead);
                         }
-                        
+
                         // Optional message parsing:
                         //StringReader msgReader = new StringReader(parts[1]);
                         //ACLParser aclParser = new ACLParser(msgReader);
                         //msg = aclParser.parse(msgReader);
                         //logger.log(Level.INFO, "Decoded msg: {0}", msg);
-                        
+
                         if(buffer.length() < index + msgLen) {
                             logger.log(Level.WARNING, "Stream only contains {0} chars. Expected {1}",
                                     new Object[]{buffer.length(), index + msgLen});
-                            
+
                         } else {
                             logger.log(Level.INFO, "Dispatching message string: {0}", buffer.substring(index, index + msgLen));
                             dispatcher.dispatchMessage(env, buffer.substring(index, index + msgLen).getBytes());
                         }
-                        
+
                         // Remove envelope and message from the buffer
                         buffer.delete(0, index + msgLen);
                     }

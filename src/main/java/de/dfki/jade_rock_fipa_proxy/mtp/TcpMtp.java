@@ -141,21 +141,29 @@ public class TcpMtp implements MTP {
             // Modify sender
             envlp.setFrom(new AID(envlp.getFrom().getName().
                     replaceAll("\\.", "-dot-"), true));
-                        
             
             // First send envelope in XML encoding
             // No line break after the envelope, so that the payload
             // starts immediately after.
             String xmlEnv = XMLCodec.encodeXML(envlp);
             writer.print(xmlEnv);
-            System.out.print(xmlEnv);
-            
             // And now message (bytes) XXX use output stream directly, not string!
-            writer.println(new String(bytes));
-            System.out.println(new String(bytes));
+            writer.print(new String(bytes));
+            writer.flush(); 
             
-            // Include EOF
-            //writer.print(-1);
+            
+            // FIXME write the message twice for testing purposes until
+            // there's also proper connection management on JADE's side.
+            // Also waiting 10s inbetween.
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            writer.print(xmlEnv);
+            writer.print(new String(bytes));
+            writer.flush();            
+            
             socket.close();
         } catch (IOException e) {
             logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
