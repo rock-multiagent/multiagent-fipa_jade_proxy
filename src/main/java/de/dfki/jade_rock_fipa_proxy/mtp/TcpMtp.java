@@ -46,6 +46,10 @@ public class TcpMtp implements MTP {
      * Maps the addresses (TcpAddress.toString()) to the TcpServers.
      */
     private final Map<String, TcpServer> servers = new HashMap<String, TcpServer>();
+    /**
+     * All currently open connections. Only outgoing.
+     */
+    private final Map<String, Socket> openConnections = new HashMap<String, Socket>();
 
     public TransportAddress strToAddr(String string) throws MTPException {
         try {
@@ -119,29 +123,82 @@ public class TcpMtp implements MTP {
     }
 
     public void deactivate() throws MTPException {
-        logger.log(Level.INFO, "Activating all tcp servers.");
+        logger.log(Level.INFO, "Deactivating all tcp servers.");
         // Deactivate all servers
         for (TcpServer server : servers.values()) {
             server.deactivate();
         }
         // Clear map
         servers.clear();
+        
+        // Close all outgoing connections
+        for(Socket socket : openConnections.values()) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Closing socket failed: ", e);
+                throw new MTPException("Closing socket failed: ", e);
+            }
+        }
+        openConnections.clear();
     }
 
     public void deliver(String string, Envelope envlp, byte[] bytes) throws MTPException {
-        logger.log(Level.INFO, "Sending envelope to {0}", string);
+        // Check if there is already an open socket.
+        Socket socket = null;
+        if (openConnections.containsKey(string)) {
+            logger.log(Level.INFO, "Reusing connection to {0}. Checking if still open.", string);
+            socket = openConnections.get(string);
+            // Check if the socket is still open
+            if (socket.isClosed()) {
+                logger.log(Level.INFO, "Removing connection to {0}, it has been closed.", string);
+                // Remove from open connections
+                openConnections.remove(string);
+                socket = null;
+            }
+        }
+        // Create a new socket if we didn't find any open
+        if (socket == null) {
+            logger.log(Level.INFO, "Opening a new connection to {0}", string);
+            try {
+                // Extract tcp address
+                String[] addParts = string.substring("tcp://".length()).split(":");
+                socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
+                openConnections.put(string, socket);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Creating connection failed: ", e);
+                throw new MTPException("Creating connection failed: ", e);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                logger.log(Level.WARNING, "Creating connection failed: ", e);
+                throw new MTPException("Creating connection failed: ", e);
+            } catch (NumberFormatException e) {
+                logger.log(Level.WARNING, "Creating connection failed: ", e);
+                throw new MTPException("Creating connection failed: ", e);
+            }
+        }
 
-        // Extract tcp address
-        String[] addParts = string.substring("tcp://".length()).split(":");
+        // Finally send
+        send(socket, envlp, bytes);
+    }
+
+    /**
+     * Actually sends an envelope through an open socket.
+     *
+     * @param socket the socket to use. Must be open.
+     * @param envlp the envelope.
+     * @param bytes the message bytes.
+     */
+    private void send(Socket socket, Envelope envlp, byte[] bytes) throws MTPException {
+        logger.log(Level.INFO, "Sending envelope to {0}:{1}", 
+                new Object[] { socket.getInetAddress(), socket.getPort() });
 
         try {
-            Socket socket = new Socket(addParts[0], Integer.parseInt(addParts[1]));
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            
+
             // Modify sender
             envlp.setFrom(new AID(envlp.getFrom().getName().
                     replaceAll("\\.", "-dot-"), true));
-            
+
             // First send envelope in XML encoding
             // No line break after the envelope, so that the payload
             // starts immediately after.
@@ -149,32 +206,10 @@ public class TcpMtp implements MTP {
             writer.print(xmlEnv);
             // And now message (bytes) XXX use output stream directly, not string!
             writer.print(new String(bytes));
-            writer.flush(); 
-            
-            
-            // FIXME write the message twice for testing purposes until
-            // there's also proper connection management on JADE's side.
-            // Also waiting 10s inbetween.
-            try {
-                Thread.sleep(10 * 1000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(TcpMtp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            writer.print(xmlEnv);
-            writer.print(new String(bytes));
-            writer.flush();            
-            
-            socket.close();
+            writer.flush();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
-            throw new MTPException("Forwarding envelope to Rock failed: ", e);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
-            throw new MTPException("Forwarding envelope to Rock failed: ", e);
-        } catch (NumberFormatException e) {
-            logger.log(Level.WARNING, "Forwarding envelope to Rock failed: ", e);
-            throw new MTPException("Forwarding envelope to Rock failed: ", e);
+            logger.log(Level.WARNING, "Forwarding envelope failed: ", e);
+            throw new MTPException("Forwarding envelope failed: ", e);
         }
     }
 }
-
