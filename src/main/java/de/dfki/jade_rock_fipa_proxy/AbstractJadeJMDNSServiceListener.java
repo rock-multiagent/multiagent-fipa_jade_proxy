@@ -5,6 +5,7 @@
  */
 package de.dfki.jade_rock_fipa_proxy;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.wrapper.ControllerException;
 import java.util.logging.Level;
@@ -29,7 +30,7 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
     /**
      * This listener needs an associated agent.
      */
-    private Agent agent;
+    private final Agent agent;
 
     /**
      *
@@ -40,16 +41,23 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
     }
 
     /**
-     * Handle this.
+     * Handle that a foreign agent appeared.
      *
      * @param address the full address.
      * @param agentName the agent's name.
      */
-    public abstract void handleAddedRockAgent(String address, String agentName);
+    public abstract void handleAddedForeignAgent(String address, String agentName);
+
+    /**
+     * Handle that a foreign agent disappeared.
+     *
+     * @param agentName the agent's name.
+     */
+    public abstract void handleRemovedForeignAgent(String agentName);
 
     /**
      * From a semicolon-separated list of locators, extracts the first TCP
-     * endpoint's address and port in the format "IP:port".
+     * endpoint's address and port in the format "tcp://IP:port".
      *
      * @param locators the locators
      * @return the endpoint.
@@ -70,23 +78,36 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
                     return null;
                 }
 
-                return locatorParts[0].substring(prefix.length());
+                return locatorParts[0];
             }
         }
         return null;
     }
 
-    public void serviceAdded(ServiceEvent event) {
+    /**
+     * This method is only necessary, as JADE's agents are published without
+     * dots. To distinguish jade from foreign agents, this has to be reverted.
+     *
+     * Also, the local name is extracted, which is necessary in any case.
+     *
+     * @param name the given name.
+     * @return the actual name.
+     */
+    private String getActualLocalName(String name) {
+        AID aid = new AID(name.replaceAll("-dot-", "."), true);
+        return aid.getLocalName();
+    }
 
-        // If it is a ROCK agent, we must create a RockDummyAgent,
+    public void serviceAdded(ServiceEvent event) {
+        String name = getActualLocalName(event.getName());
+        // If it is a foreign agent, we must handle the event
         // if it is a JADE agent, we must not do anything.
         try {
-            agent.getContainerController().getAgent(event.getName());
+            agent.getContainerController().getAgent(name);
             // The agent was found, it is a JADE agent
         } catch (ControllerException ex) {
-            // This means it's a ROCK agent
-            logger.log(Level.INFO, "Foreign agent appeared: {0}",
-                    new String[]{event.getName()});
+            // This means it's a foreign agent
+            logger.log(Level.INFO, "Foreign agent appeared: {0}", name);
 
             // event.getInfo() does not suffice, service must be resolved
             ServiceInfo info = event.getDNS().getServiceInfo(event.getType(),
@@ -102,8 +123,13 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
                 return;
             }
 
-            handleAddedRockAgent(endpoint, event.getName());
+            handleAddedForeignAgent(endpoint, event.getName());
         }
+    }
+
+    public void serviceRemoved(ServiceEvent event) {
+        logger.log(Level.INFO, "Foreign agent disappeared: {0}", event.getName());
+        handleRemovedForeignAgent(event.getName());
     }
 
     public void serviceResolved(ServiceEvent event) {

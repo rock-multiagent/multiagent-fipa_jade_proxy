@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * messages to him via the Rock proxy MTS (sockets).
  *
  * @author Satia Herfert
+ * @deprecated Not to be used anymore.
  */
 public class RockDummyAgent extends Agent {
 

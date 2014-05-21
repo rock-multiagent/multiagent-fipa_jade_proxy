@@ -32,7 +32,7 @@ public class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
             public void handle(Event event) {
                 BornAgent ba = (BornAgent) event;
                 // We must only register JADE agents, not RockDummyAgents
-                if (!ba.getClassName().equals(RockDummyAgent.class.getName())) {
+                if (ba.getClassName() != null && !ba.getClassName().equals(RockDummyAgent.class.getName())) {
                     jmdnsManager.registerJadeAgent(ba.getAgent().getName());
                 }
             }

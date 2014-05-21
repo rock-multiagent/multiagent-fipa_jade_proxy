@@ -16,17 +16,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.jmdns.ServiceEvent;
 
 /**
  * Handles the JMDNS/avahi subscriptions and creates/deletes RockDummyAgents.
  *
  * @author Satia Herfert
+ * @deprecated Not to be used anymore: Start a TcpMtpAgent instead.
  */
 public class JadeProxyAgent extends Agent {
 
     /**
      * Adds/removes corresponding RockDummyAgents.
+     * @deprecated Not to be used anymore: Start a TcpMtpAgent instead.
      */
     public class JadeProxyServiceListener extends AbstractJadeJMDNSServiceListener {
 
@@ -35,8 +36,9 @@ public class JadeProxyAgent extends Agent {
         }
 
         @Override
-        public void handleAddedRockAgent(String address, String agentName) {
+        public void handleAddedForeignAgent(String address, String agentName) {
             // now extract IP and port
+            address = address.substring("tcp://".length());
             String[] parts = address.split(":");
             if (parts.length != 2) {
                 logger.log(Level.INFO, "Malformed tcp endpoint: {0}",
@@ -56,24 +58,14 @@ public class JadeProxyAgent extends Agent {
             }
         }
 
-        public void serviceRemoved(ServiceEvent event) {
-        // If it was a ROCK agent, we must delete the RockDummyAgent,
-            // if it was a JADE agent, we must not do anything.
+        @Override
+        public void handleRemovedForeignAgent(String agentName) {
             try {
-                getContainerController().getAgent(event.getName());
-                // The agent was found, it was a ROCK agent
-                logger.log(Level.INFO, "Rock agent disappeared: {0}",
-                        new String[]{event.getName()});
-
-                try {
-                    getContainerController().getAgent(event.getName()).kill();
-                } catch (StaleProxyException ex) {
-                    logger.log(Level.WARNING, "Could not kill RockProxyAgent.", ex);
-                } catch (ControllerException ex) {
-                    logger.log(Level.WARNING, "Could not kill RockProxyAgent.", ex);
-                }
+                getContainerController().getAgent(agentName).kill();
+            } catch (StaleProxyException ex) {
+                logger.log(Level.WARNING, "Could not kill RockProxyAgent.", ex);
             } catch (ControllerException ex) {
-                // The agent is already removed, it was a JADE agent
+                logger.log(Level.WARNING, "Could not kill RockProxyAgent.", ex);
             }
         }
     }
@@ -126,7 +118,7 @@ public class JadeProxyAgent extends Agent {
         try {
             jmdnsManager = new JMDNSManager(jadeSocketPort, new JadeProxyServiceListener());
             serverSocket = new ServerSocket(jadeSocketPort);
-            
+
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error initializing JMDNS or ServerSocket:", ex);
             // In the case of an exception here, we cannot function properly

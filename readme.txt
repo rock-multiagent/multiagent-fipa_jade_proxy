@@ -43,3 +43,19 @@ b) Console:
 
 Alter the command to include your agents as necessary. Alternatively,
 create your own main class, that calls the Jade main class with these arguments.
+
+
+== Additional information ==
+When sending a message from Jade to Rock, the tcp address must be known.
+The AMS can be searched for that address, as all foreign agents are registered
+there. To obtain a valid AID by just knowing the name, consider the following
+code, executed inside an agent (this refers an agent):
+
+AID aid = new AID("rock_agent", true);
+AMSAgentDescription ad = new AMSAgentDescription();
+ad.setName(aid);
+// Check it is registered.
+AMSAgentDescription[] res = AMSService.search(this, ad);
+if(res.length > 0) {
+    aid = res[0].getName();
+}

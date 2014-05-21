@@ -2,7 +2,11 @@ package de.dfki.jade_rock_fipa_proxy;
 
 import de.dfki.jade_rock_fipa_proxy.mtp.TcpMtp;
 import de.dfki.jade_rock_fipa_proxy.mtp.TcpServer;
+import jade.core.AID;
 import jade.core.Agent;
+import jade.domain.AMSService;
+import jade.domain.FIPAAgentManagement.AMSAgentDescription;
+import jade.domain.FIPAException;
 import jade.mtp.MTPException;
 import jade.wrapper.StaleProxyException;
 import java.io.IOException;
@@ -15,6 +19,51 @@ import java.util.logging.Logger;
  * @author Satia Herfert
  */
 public class TcpMtpAgent extends Agent {
+
+    /**
+     * Adds/removes corresponding RockDummyAgents.
+     */
+    public class TcpMtpProxyServiceListener extends AbstractJadeJMDNSServiceListener {
+
+        public TcpMtpProxyServiceListener() {
+            super(TcpMtpAgent.this);
+        }
+
+        @Override
+        public void handleAddedForeignAgent(String address, String agentName) {
+            try {
+                logger.log(Level.INFO, "Registering {0} ({1}) with the AMS.",
+                        new Object[]{agentName, address});
+
+                AID aid = new AID(agentName, true);
+                aid.addAddresses(address);
+                AMSAgentDescription amsad = new AMSAgentDescription();
+                amsad.setName(aid);
+                amsad.setState(AMSAgentDescription.ACTIVE);
+
+                AMSService.register(TcpMtpAgent.this, amsad);
+            } catch (FIPAException ex) {
+                logger.log(Level.WARNING, "Could not register " + agentName, ex);
+            }
+        }
+
+        @Override
+        public void handleRemovedForeignAgent(String agentName) {
+            try {
+                logger.log(Level.INFO, "Deregistering {0} with the AMS.",
+                        agentName);
+
+                AID aid = new AID(agentName, true);
+                AMSAgentDescription amsad = new AMSAgentDescription();
+                amsad.setName(aid);
+                amsad.setState(AMSAgentDescription.ACTIVE);
+
+                AMSService.deregister(TcpMtpAgent.this, amsad);
+            } catch (FIPAException ex) {
+                logger.log(Level.WARNING, "Could not register " + agentName, ex);
+            }
+        }
+    }
 
     /**
      * The Logger.
@@ -48,7 +97,8 @@ public class TcpMtpAgent extends Agent {
         }
 
         try {
-            jmdnsManager = new JMDNSManager(TcpServer.DEFAULT_PORT,  null);
+            jmdnsManager = new JMDNSManager(TcpServer.DEFAULT_PORT,
+                    new TcpMtpProxyServiceListener());
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error initializing JMDNS", ex);
             // In the case of an exception here, we cannot function properly
