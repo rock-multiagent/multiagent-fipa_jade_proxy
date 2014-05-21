@@ -83,7 +83,7 @@ public class JMDNSManager {
         this.inetAddress = getLocalIPv4Address();
 
         jmdns = JmDNS.create(inetAddress);
-        if(listener != null) {
+        if (listener != null) {
             jmdns.addServiceListener(JMDNS_TYPE, listener);
         }
         logger.log(Level.INFO, "JMDNS created for IP {0}", inetAddress.getHostAddress());
@@ -102,22 +102,21 @@ public class JMDNSManager {
             properties.put("LOCATOR", "tcp://" + inetAddress.getHostAddress() + ":"
                     + jadeSocketPort + " JadeProxyAgent");
             properties.put("TIMESTAMP", JMDNS_DATE_FORMAT.format(GregorianCalendar.getInstance().getTime()));
-            
+
             // _fipa_service_directory._udp.local.
 //            Map<Fields,String> qualifiedNameMap = new EnumMap<Fields, String>(Fields.class);
 //            qualifiedNameMap.put(Fields.Application, "fipa_service_directory");
 //            qualifiedNameMap.put(Fields.Domain, "local");
 //            qualifiedNameMap.put(Fields.Instance, name + "@1.234:1099/JADE");
 //            qualifiedNameMap.put(Fields.Protocol, "udp");
-//            ServiceInfo si = ServiceInfo.create(qualifiedNameMap, 
+//            ServiceInfo si = ServiceInfo.create(qualifiedNameMap,
 //                    jadeSocketPort, 1, 1, true, properties);
-
             // JMDNS cannot handle dots in the service name. They are being
             // replaced.
-            ServiceInfo si = ServiceInfo.create(JMDNS_TYPE, 
+            ServiceInfo si = ServiceInfo.create(JMDNS_TYPE,
                     name.replaceAll("\\.", "-dot-"),
                     jadeSocketPort, 1, 1, true, properties);
-            
+
             jmdns.registerService(si);
             logger.log(Level.INFO, "JMDNS registerered {0}", si.getQualifiedName());
         } catch (IOException e) {
@@ -131,12 +130,15 @@ public class JMDNSManager {
      * @param name its name
      */
     public void unregisterJadeAgent(String name) {
-        ServiceInfo si = jmdns.getServiceInfo(JMDNS_TYPE, name);
+        // JMDNS cannot handle dots in the service name. They are being
+        // replaced.
+        String name0 = name.replaceAll("\\.", "-dot-");
+        ServiceInfo si = jmdns.getServiceInfo(JMDNS_TYPE, name0);
         if (si != null) {
             jmdns.unregisterService(si);
-            logger.log(Level.INFO, "JMDNS unregisterered {0}", name.replaceAll("-dot-", "."));
+            logger.log(Level.INFO, "JMDNS unregisterered {0}", name0);
         } else {
-            logger.log(Level.INFO, "JMDNS already unregistered: {0}", name);
+            logger.log(Level.INFO, "JMDNS already unregistered: {0}", name0);
         }
     }
 

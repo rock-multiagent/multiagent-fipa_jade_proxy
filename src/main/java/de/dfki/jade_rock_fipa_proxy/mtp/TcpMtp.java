@@ -10,12 +10,16 @@ package de.dfki.jade_rock_fipa_proxy.mtp;
 import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLParser;
+import jade.lang.acl.ParseException;
 import jade.mtp.MTP;
 import jade.mtp.MTPException;
 import jade.mtp.TransportAddress;
 import jade.mtp.http.XMLCodec;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -195,9 +199,18 @@ public class TcpMtp implements MTP {
         try {
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
-            // Modify sender
+            // XXX Modify envelope from
             envlp.setFrom(new AID(envlp.getFrom().getName().
                     replaceAll("\\.", "-dot-"), true));
+            // ... and message sender
+            try {
+                ACLMessage msg = ACLParser.create().parse(new StringReader(new String(bytes)));
+                msg.setSender(new AID(msg.getSender().getName().
+                    replaceAll("\\.", "-dot-"), true));
+                bytes = msg.toString().getBytes();
+            } catch (ParseException e) {
+                logger.log(Level.WARNING, "Could not modify message sender: ", e);
+            }
 
             // First send envelope in XML encoding
             // No line break after the envelope, so that the payload

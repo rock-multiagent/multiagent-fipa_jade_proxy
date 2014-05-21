@@ -50,17 +50,24 @@ public class TcpMtpAgent extends Agent {
         @Override
         public void handleRemovedForeignAgent(String agentName) {
             try {
-                logger.log(Level.INFO, "Deregistering {0} with the AMS.",
-                        agentName);
-
                 AID aid = new AID(agentName, true);
                 AMSAgentDescription amsad = new AMSAgentDescription();
                 amsad.setName(aid);
                 amsad.setState(AMSAgentDescription.ACTIVE);
-
+                
+                // Only deregister, if registered!
+                // Check it is registered.
+                AMSAgentDescription[] res = AMSService.search(TcpMtpAgent.this, amsad);
+                if(res.length == 0) {
+                    // Nothing to deregister
+                    return;
+                }
+                
+                logger.log(Level.INFO, "Deregistering {0} with the AMS.",
+                        agentName);
                 AMSService.deregister(TcpMtpAgent.this, amsad);
             } catch (FIPAException ex) {
-                logger.log(Level.WARNING, "Could not register " + agentName, ex);
+                logger.log(Level.WARNING, "Could not deregister " + agentName, ex);
             }
         }
     }

@@ -17,6 +17,8 @@ import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.ACLParser;
+import jade.lang.acl.ParseException;
 import jade.mtp.InChannel;
 import jade.mtp.MTPException;
 import jade.mtp.http.XMLCodec;
@@ -161,7 +163,6 @@ public class TcpServer {
      * De-serializes the envelopes and dispatches them.
      */
     private void forward(Socket socket) {
-        ACLMessage msg;
         Envelope env;
         String input;
 
@@ -180,7 +181,7 @@ public class TcpServer {
                 int charsRead;
                 while ((charsRead = reader.read(segment, 0, segment.length)) != -1) {
                     buffer.append(segment, 0, charsRead);
-                    
+
                     int index;
                     // As long as a (new) whole envelope is included...
                     while ((index = buffer.indexOf(splitter)) != -1) {
@@ -195,19 +196,30 @@ public class TcpServer {
                         env = xmlCodec.parse(envReader);
                         logger.log(Level.INFO, "Decoded env: {0}", env);
 
-                        // Modify receivers
+                        // XXX Modify intended receivers
                         // Using a set removes duplicates that occur,
                         // as Rock and Jade interpret FIPA differently.
                         // dispatch envelope
-                        Set<AID> newRecvs = new HashSet<AID>();
+                        Set<AID> newIntendedRecvs = new HashSet<AID>();
                         Iterator<AID> i = env.getAllIntendedReceiver();
                         while (i.hasNext()) {
                             AID aid = i.next();
-                            newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                            newIntendedRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
                         }
                         env.clearAllIntendedReceiver();
-                        for (AID aid : newRecvs) {
+                        for (AID aid : newIntendedRecvs) {
                             env.addIntendedReceiver(aid);
+                        }
+                        // Same for to
+                        Set<AID> newRecvs = new HashSet<AID>();
+                        Iterator<AID> i0 = env.getAllTo();
+                        while (i0.hasNext()) {
+                            AID aid = i0.next();
+                            newIntendedRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                        }
+                        env.clearAllTo();
+                        for (AID aid : newIntendedRecvs) {
+                            env.addTo(aid);
                         }
 
                         int msgLen = env.getPayloadLength().intValue();
@@ -218,19 +230,33 @@ public class TcpServer {
                             buffer.append(segment, 0, charsRead);
                         }
 
-                        // Optional message parsing:
-                        //StringReader msgReader = new StringReader(parts[1]);
-                        //ACLParser aclParser = new ACLParser(msgReader);
-                        //msg = aclParser.parse(msgReader);
-                        //logger.log(Level.INFO, "Decoded msg: {0}", msg);
-
-                        if(buffer.length() < index + msgLen) {
+                        if (buffer.length() < index + msgLen) {
                             logger.log(Level.WARNING, "Stream only contains {0} chars. Expected {1}",
                                     new Object[]{buffer.length(), index + msgLen});
 
                         } else {
-                            logger.log(Level.INFO, "Dispatching message string: {0}", buffer.substring(index, index + msgLen));
-                            dispatcher.dispatchMessage(env, buffer.substring(index, index + msgLen).getBytes());
+                            String msgString = buffer.substring(index, index + msgLen);
+                            // XXX Message parsing + Receiver modification:
+                            try {
+                                StringReader msgReader = new StringReader(msgString);
+                                ACLMessage msg = ACLParser.create().parse(msgReader);
+                                Set<AID> newMsgRecvs = new HashSet<AID>();
+                                Iterator<AID> i1 = msg.getAllReceiver();
+                                while (i1.hasNext()) {
+                                    AID aid = i1.next();
+                                    newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                                }
+                                msg.clearAllReceiver();
+                                for (AID aid : newRecvs) {
+                                    msg.addReceiver(aid);
+                                }
+                                msgString = msg.toString();
+                            } catch (ParseException ex) {
+                                logger.log(Level.WARNING, "Could not modify message receiver: ", ex);
+                            }
+
+                            logger.log(Level.INFO, "Dispatching message string: {0}", msgString);
+                            dispatcher.dispatchMessage(env, msgString.getBytes());
                         }
 
                         // Remove envelope and message from the buffer

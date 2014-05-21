@@ -128,7 +128,7 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
     }
 
     public void serviceRemoved(ServiceEvent event) {
-        logger.log(Level.INFO, "Foreign agent disappeared: {0}", event.getName());
+        logger.log(Level.INFO, "Agent disappeared: {0}", event.getName());
         handleRemovedForeignAgent(event.getName());
     }
 
