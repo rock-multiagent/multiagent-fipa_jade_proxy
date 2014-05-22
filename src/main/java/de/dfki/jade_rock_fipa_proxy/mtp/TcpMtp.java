@@ -211,6 +211,8 @@ public class TcpMtp implements MTP {
             } catch (ParseException e) {
                 logger.log(Level.WARNING, "Could not modify message sender: ", e);
             }
+            // IMPORTANT: This changes the payload length, so remember to adapt that
+            envlp.setPayloadLength((long)bytes.length);
 
             // First send envelope in XML encoding
             // No line break after the envelope, so that the payload
