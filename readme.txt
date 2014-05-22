@@ -1,6 +1,9 @@
 1. Run 'mvn install' in this directory.
 
-2. Create a new Java Maven project. (In Netbeans: New Project -> Maven -> Java application)
+2. Create a new Java Maven project.
+     - New Project -> Maven -> Java application
+b) Console::
+     - Run 'mvn archetype:create  -DgroupId=[your project's group id] -DartifactId=[your project's artifact id]'
 
 3. Add this dependency to your pom.xml:
 <dependency>

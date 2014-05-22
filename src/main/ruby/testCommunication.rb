@@ -14,6 +14,10 @@ Orocos.run "fipa_services_test"  do
         print 'Deployment not found.'
         raise
     end
+    
+    # important to have tcp here, udt can be skipped
+    mts_module.protocols = ["tcp"]
+    
     mts_module.configure
     mts_module.start
     
