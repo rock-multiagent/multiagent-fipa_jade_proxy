@@ -4,6 +4,8 @@
      - New Project -> Maven -> Java application
 b) Console::
      - Run 'mvn archetype:create  -DgroupId=[your project's group id] -DartifactId=[your project's artifact id]'
+     - groupId should be your highlevel 'package' description under which you place the project
+     - artifactId will be you project name
 
 3. Add this dependency to your pom.xml:
 <dependency>
@@ -62,3 +64,33 @@ AMSAgentDescription[] res = AMSService.search(this, ad);
 if(res.length > 0) {
     aid = res[0].getName();
 }
+
+
+== Testing ==
+
+Ruby test for usage with multiagent/orogen/fipa_services can be found in this project in: 
+
+    src/main/ruby
+
+== Troubleshooting ==
+
+== mvn assembly::assembly fails ==
+
+Check that the groupId is correct: http://maven.apache.org/guides/mini/guide-naming-conventions.html
+For example: org.rock-robotics is an invalid groupId name
+
+=== Use a different java version ===
+Change the source/target specification to the desired java version in the following block in the pom.xml
+<build>
+    <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.1</version>
+          <configuration>
+            <source>1.6</source>
+            <target>1.6</target>
+          </configuration>
+        </plugin>
+    </plugins>
+</build>
