@@ -1,3 +1,5 @@
+== Installation ==
+
 1. Run 'mvn install' in this directory.
 
 2. Create a new Java Maven project.
@@ -49,8 +51,15 @@ b) Console:
 Alter the command to include your agents as necessary. Alternatively,
 create your own main class, that calls the Jade main class with these arguments.
 
+== Testing ==
 
-== Additional information ==
+Ruby test for usage with multiagent/orogen/fipa_services can be found in this project in: 
+
+    src/main/ruby
+
+
+== Development ==
+
 When sending a message from Jade to Rock, the tcp address must be known.
 The AMS can be searched for that address, as all foreign agents are registered
 there. To obtain a valid AID by just knowing the name, consider the following
@@ -65,16 +74,40 @@ if(res.length > 0) {
     aid = res[0].getName();
 }
 
+== Technical details ==    
 
-== Testing ==
+Jade can forward FIPA envelopes to foreign platforms with 'Message Transports'. The standard transports
+defined in the FIPA standard which Jade implements are HTTP and IIOS. Rock used to support only UDT, but
+TCP has been added as well. The class de.dfki.jade_rock_fipa_proxy.mtp.TcpMtp implements the tcp Message
+Transport in Jade. It's task is to send outgoing messages whereas TcpServer (same package) receives
+incoming messages. The best encoding combination which seems to be the least error-prone, is XML encoding
+for the envelopes and String encoding for the ACL-Messages. The de.dfki.jade_rock_fipa_proxy.TcpMtpAgent
+starts and registers the Mtp and starts other central behaviours.
 
-Ruby test for usage with multiagent/orogen/fipa_services can be found in this project in: 
+To be able to find the tcp addresses of other agents, Rock uses DNS-SD, also known as zeroconf/bonjour/avahi.
+Using the Java library JMDNS, this behaviour is also implemented in de.dfki.jade_rock_fipa_proxy.JMDNSManager.
+All Jade agent are registered with it and spawning non-Jade agents (in the same service directory) are 
+propagated using the AMS agent.
 
-    src/main/ruby
+The classe de.dfki.jade_rock_fipa_proxy.JadeproxyAgent and de.dfki.jade_rock_fipa_proxy.RockDummyAgent are
+deprecated.
+
+See http://fipa.org/ and http://jade.tilab.com/ for more information.
+
+=== Open problems ===
+
+JMDNS cannot handle services containing a dot ('.') in their service name. It can neither publish nor resolve
+such services. As the global name of Jade agents contains the IP address, e.g. 'jadeAgent@10.0.0.1:1099/JADE',
+this is a problem. To be able to differentiate between Jade agents with the same name in different systems,
+the local name does not suffice. Therefore, the Jade agents are published replacing all dots with '-dot-'.
+
+To address agents correctly, all outgoing messages not to be modified to include replace dots, and the same 
+has to be done vice versa when receiving messages.
+
 
 == Troubleshooting ==
 
-== mvn assembly::assembly fails ==
+=== mvn assembly::assembly fails ===
 
 Check that the groupId is correct: http://maven.apache.org/guides/mini/guide-naming-conventions.html
 For example: org.rock-robotics is an invalid groupId name
