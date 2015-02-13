@@ -1,13 +1,17 @@
 == Installation ==
 
 1. Run 'mvn install' in this directory.
+    a. If the dependency to tilab cannot be resolved check the version and update
+the pom.xml accordingly
+      - http://jade.tilab.com/maven/com/tilab/jade/jade/  will list a folder of
+        the correct version
 
 2. Create a new Java Maven project.
      - New Project -> Maven -> Java application
 b) Console::
      - Run 'mvn archetype:create  -DgroupId=[your project's group id] -DartifactId=[your project's artifact id]'
      - groupId should be your highlevel 'package' description under which you place the project
-     - artifactId will be you project name
+     - artifactId will be your project name
 
 3. Add this dependency to your pom.xml:
 <dependency>

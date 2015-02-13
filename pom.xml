@@ -20,7 +20,20 @@
                 <source>1.6</source>
                 <target>1.6</target>
               </configuration>
-            </plugin>
+        </plugin>
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+                <archive>
+                    <manifest>
+                        <mainClass>jade.Boot</mainClass>
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
         </plugins>
     </build>
 
@@ -51,7 +64,7 @@
         <dependency>
             <groupId>com.tilab.jade</groupId>
             <artifactId>jade</artifactId>
-            <version>4.3.1</version>
+            <version>4.3.3</version>
         </dependency>
         <!--
         <dependency>
