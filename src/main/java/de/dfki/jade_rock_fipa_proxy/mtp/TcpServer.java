@@ -204,7 +204,7 @@ public class TcpServer {
                         Iterator<AID> i = env.getAllIntendedReceiver();
                         while (i.hasNext()) {
                             AID aid = i.next();
-                            newIntendedRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                            newIntendedRecvs.add(new AID(aid.getName(), true));
                         }
                         env.clearAllIntendedReceiver();
                         for (AID aid : newIntendedRecvs) {
@@ -215,7 +215,7 @@ public class TcpServer {
                         Iterator<AID> i0 = env.getAllTo();
                         while (i0.hasNext()) {
                             AID aid = i0.next();
-                            newIntendedRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                            newIntendedRecvs.add(new AID(aid.getName(), true));
                         }
                         env.clearAllTo();
                         for (AID aid : newIntendedRecvs) {
@@ -244,7 +244,7 @@ public class TcpServer {
                                 Iterator<AID> i1 = msg.getAllReceiver();
                                 while (i1.hasNext()) {
                                     AID aid = i1.next();
-                                    newRecvs.add(new AID(aid.getName().replaceAll("-dot-", "."), true));
+                                    newRecvs.add(new AID(aid.getName(), true));
                                 }
                                 msg.clearAllReceiver();
                                 for (AID aid : newRecvs) {

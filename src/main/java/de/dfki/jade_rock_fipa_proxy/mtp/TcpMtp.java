@@ -200,13 +200,11 @@ public class TcpMtp implements MTP {
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
             // XXX Modify envelope from
-            envlp.setFrom(new AID(envlp.getFrom().getName().
-                    replaceAll("\\.", "-dot-"), true));
+            envlp.setFrom(new AID(envlp.getFrom().getName(), true));
             // ... and message sender
             try {
                 ACLMessage msg = ACLParser.create().parse(new StringReader(new String(bytes)));
-                msg.setSender(new AID(msg.getSender().getName().
-                    replaceAll("\\.", "-dot-"), true));
+                msg.setSender(new AID(msg.getSender().getName(), true));
                 bytes = msg.toString().getBytes();
             } catch (ParseException e) {
                 logger.log(Level.WARNING, "Could not modify message sender: ", e);

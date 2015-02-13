@@ -114,7 +114,7 @@ public class JMDNSManager {
             // JMDNS cannot handle dots in the service name. They are being
             // replaced.
             ServiceInfo si = ServiceInfo.create(JMDNS_TYPE,
-                    name.replaceAll("\\.", "-dot-"),
+                    name.replaceAll("\\.", "?"),
                     jadeSocketPort, 1, 1, true, properties);
 
             jmdns.registerService(si);
@@ -132,7 +132,7 @@ public class JMDNSManager {
     public void unregisterJadeAgent(String name) {
         // JMDNS cannot handle dots in the service name. They are being
         // replaced.
-        String name0 = name.replaceAll("\\.", "-dot-");
+        String name0 = name.replaceAll("\\.", "?");
         ServiceInfo si = jmdns.getServiceInfo(JMDNS_TYPE, name0);
         if (si != null) {
             jmdns.unregisterService(si);

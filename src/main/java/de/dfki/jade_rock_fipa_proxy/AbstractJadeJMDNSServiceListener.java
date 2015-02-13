@@ -94,7 +94,7 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
      * @return the actual name.
      */
     private String getActualLocalName(String name) {
-        AID aid = new AID(name.replaceAll("-dot-", "."), true);
+        AID aid = new AID(name.replaceAll("?", "."), true);
         return aid.getLocalName();
     }
 
