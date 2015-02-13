@@ -4,19 +4,19 @@ include Orocos
 Orocos.initialize
 
 # Test producing a message delivery failure message
-Orocos.run "fipa_services_test"  do
+Orocos.run "fipa_services::MessageTransportTask" => "mts"  do
     puts "JADE communication test"
     
     # Start a mts for the communication
     begin
-        mts_module = TaskContext.get "mts_0"
+        mts_module = TaskContext.get "mts"
     rescue Orocos::NotFound
         print 'Deployment not found.'
         raise
     end
     
     # important to have tcp here, udt can be skipped
-    mts_module.protocols = ["tcp"]
+    mts_module.transports = ["tcp"]
     
     mts_module.configure
     mts_module.start
