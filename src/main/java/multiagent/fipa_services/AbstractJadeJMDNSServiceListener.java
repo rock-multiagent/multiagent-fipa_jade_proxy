@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package de.dfki.jade_rock_fipa_proxy;
+package multiagent.fipa_services;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -60,7 +55,7 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
      * endpoint's address and port in the format "tcp://IP:port".
      *
      * @param locators the locators
-     * @return the endpoint.
+     * @return the endpoint or null on error
      */
     private String getTCPResolverAddress(String locators) {
         if (locators == null) {
@@ -70,7 +65,7 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
 
         String[] locatorsArray = locators.split(";");
         for (String locator : locatorsArray) {
-            // XXX also check for "fipa::services::message_transport::SocketTransport" ?
+            // TODO (optional) : check for valid service signatures
             if (locator.startsWith(prefix)) {
                 // Cut last part, cut "tcp://"
                 String[] locatorParts = locator.split(" ");
@@ -86,7 +81,9 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
 
     /**
      * This method is only necessary, as JADE's agents are published without
-     * dots. To distinguish jade from foreign agents, this has to be reverted.
+     * dots -- since that is not properly understood by 
+     * the mdsn implementation.
+     * To distinguish jade from foreign agents, this has to be reverted.
      *
      * Also, the local name is extracted, which is necessary in any case.
      *
@@ -98,6 +95,9 @@ public abstract class AbstractJadeJMDNSServiceListener implements ServiceListene
         return aid.getLocalName();
     }
 
+    /**
+     * Handler when services are added
+     */
     public void serviceAdded(ServiceEvent event) {
         String name = getActualLocalName(event.getName());
         // If it is a foreign agent, we must handle the event

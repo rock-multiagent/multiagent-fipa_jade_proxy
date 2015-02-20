@@ -1,4 +1,4 @@
-package de.dfki.jade_rock_fipa_proxy;
+package multiagent.fipa_services;
 
 import java.io.IOException;
 import java.net.Inet4Address;

@@ -1,7 +1,7 @@
-package de.dfki.jade_rock_fipa_proxy;
+package multiagent.fipa_services;
 
-import de.dfki.jade_rock_fipa_proxy.mtp.TcpMtp;
-import de.dfki.jade_rock_fipa_proxy.mtp.TcpServer;
+import multiagent.fipa_services.mtp.TcpMtp;
+import multiagent.fipa_services.mtp.TcpServer;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.AMSService;

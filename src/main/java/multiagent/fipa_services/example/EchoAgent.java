@@ -1,4 +1,4 @@
-package de.dfki.jade_rock_fipa_proxy.example;
+package multiagent.fipa_services.example;
 
 import jade.core.AID;
 import jade.core.Agent;

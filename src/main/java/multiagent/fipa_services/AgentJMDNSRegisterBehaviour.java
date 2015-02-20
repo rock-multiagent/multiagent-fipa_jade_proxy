@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package de.dfki.jade_rock_fipa_proxy;
+package multiagent.fipa_services;
 
 import jade.domain.introspection.AMSSubscriber;
 import jade.domain.introspection.BornAgent;
@@ -13,7 +8,11 @@ import jade.domain.introspection.IntrospectionVocabulary;
 import java.util.Map;
 
 /**
- * Every time an agent gets "born" it is registered via JMDNS, and when it
+ * The AMSSubscriber is a behaviour that subscribes to the AMS to receive notifications about platform-wide events.
+ * The installHandlers method must be redefined to define the handlers for events the agent executing this behaviour is interested in.
+ *
+ * The AgentJMDNSRegisterBehaviour takes care that
+ * every time an agent gets "born" it is registered via JMDNS, and when it
  * "dies" it is unregistered.
  *
  * @author Satia Herfert
@@ -31,19 +30,13 @@ public class AgentJMDNSRegisterBehaviour extends AMSSubscriber {
         AMSSubscriber.EventHandler addAgentEH = new AMSSubscriber.EventHandler() {
             public void handle(Event event) {
                 BornAgent ba = (BornAgent) event;
-                // We must only register JADE agents, not RockDummyAgents
-                if (ba.getClassName() != null && !ba.getClassName().equals(RockDummyAgent.class.getName())) {
-                    jmdnsManager.registerJadeAgent(ba.getAgent().getName());
-                }
+                jmdnsManager.registerJadeAgent(ba.getAgent().getName());
             }
         };
 
         AMSSubscriber.EventHandler removeAgentEH = new AMSSubscriber.EventHandler() {
             public void handle(Event event) {
                 DeadAgent da = (DeadAgent) event;
-                // We unregister in any case:
-                // It was a RockDummyAgent: the JMDNS entry will already be deleted
-                // It was a JADE Agent: we delete the entry
                 jmdnsManager.unregisterJadeAgent(da.getAgent().getName());
             }
         };

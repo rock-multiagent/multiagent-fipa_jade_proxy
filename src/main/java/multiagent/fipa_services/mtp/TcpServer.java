@@ -1,18 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package de.dfki.jade_rock_fipa_proxy.mtp;
+package multiagent.fipa_services.mtp;
 
-//import cascom.fipa.acl.ACLDecoder;
-//import cascom.fipa.acl.ACLEncoder;
-//import cascom.fipa.acl.BEParseException;
-//import cascom.fipa.acl.BitEffACLCodec;
-//import cascom.fipa.envelope.BitEfficientEnvelopeCodec;
-//import cascom.fipa.envelope.EnvelopeDecoder;
-//import cascom.fipa.envelope.EnvelopeEncoder;
-import de.dfki.jade_rock_fipa_proxy.JMDNSManager;
+import multiagent.fipa_services.JMDNSManager;
 import jade.core.AID;
 import jade.core.Profile;
 import jade.domain.FIPAAgentManagement.Envelope;

@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package de.dfki.jade_rock_fipa_proxy.mtp;
+package multiagent.fipa_services.mtp;
 
 import jade.mtp.TransportAddress;
 import java.net.InetAddress;
