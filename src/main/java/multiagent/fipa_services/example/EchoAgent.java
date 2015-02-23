@@ -69,7 +69,7 @@ public class EchoAgent extends Agent {
                 /**
                  * If there was no new message, we block(), which waits until
                  * a message arrives. This happens in the very beginning and
-                 * can also happen if other behavious 'ate' the new message
+                 * can also happen if other behaviours 'ate' the new message
                  * using receiver, before we had the chance.
                  */
                 block();
