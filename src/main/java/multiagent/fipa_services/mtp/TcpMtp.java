@@ -213,6 +213,9 @@ public class TcpMtp implements MTP {
             // And now message (bytes) XXX use output stream directly, not string!
             writer.print(new String(bytes));
             writer.flush();
+            writer.close();
+            socket.close();
+            logger.log(Level.INFO, "Sending completed. Socket closed");
         } catch (IOException e) {
             logger.log(Level.WARNING, "Forwarding envelope failed: ", e);
             throw new MTPException("Forwarding envelope failed: ", e);
