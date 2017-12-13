@@ -1,4 +1,13 @@
-== Installation ==
+# FIPA Jade Proxy
+
+This component has been initially developed to server as proxy to connect the two frameworks [Rock](http://rock-robotics.org) and
+framework [JADE](http://jade.tilab.com/).
+
+The software was initiated at at the [Robotics Innovation
+Center](http://robotik.dfki-bremen.de/en/startpage.html) of the [German Research
+Center for Artificial Intelligence (DFKI)](http://www.dfki.de) in Bremen.
+
+## Installation
 
 1. Run 'mvn install' in this directory.
     a. If the dependency to tilab cannot be resolved check the version and update
@@ -13,14 +22,18 @@ b) Console::
      - groupId should be your highlevel 'package' description under which you place the project
      - artifactId will be your project name
 
+
 3. Add this dependency to your pom.xml:
+```
 <dependency>
     <groupId>multiagent</groupId>
     <artifactId>fipa_services</artifactId>
     <version>0.0.1</version>
 </dependency>
+```
 
 4. To be able to create an executable, standalone jar file, add the following to your pom.xml:
+```
 <build>
     <plugins>
         <plugin>
@@ -38,7 +51,7 @@ b) Console::
         </plugin>
     </plugins>
 </build>
-
+```
 If you have your own main class (that calls Jade's main class), change that accordingly.
 
 5. Running your application:
@@ -55,20 +68,20 @@ b) Console:
 Alter the command to include your agents as necessary. Alternatively,
 create your own main class, that calls the Jade main class with these arguments.
 
-== Testing ==
+## Testing
 
 Ruby test for usage with multiagent/orogen/fipa_services can be found in this project in: 
-
+```
     src/main/ruby
+```
 
-
-== Development ==
+## Development
 
 The extensively documented class multiagent.fipa_services.example.EchoAgent
 should give a good start. 
 For main concepts of Jade development, check http://jade.tilab.com/
 
-== Technical details ==    
+## Technical details
 
 Jade can forward FIPA envelopes to foreign platforms with 'Message Transports'. The standard transports
 defined in the FIPA standard which Jade implements are HTTP and IIOS. Rock used to support only UDT, but
@@ -85,7 +98,7 @@ propagated using the AMS agent.
 
 See http://fipa.org/ and http://jade.tilab.com/ for more information.
 
-=== Details ===
+### Details
 
 JMDNS cannot handle services containing a dot ('.') in their service name. It can neither publish nor resolve
 such services. As the global name of Jade agents contains the IP address, e.g. 'jadeAgent@10.0.0.1:1099/JADE',
@@ -96,15 +109,17 @@ However, there is not need to adapt the address of the agent address since
 conversion is done transparently for users.
 
 
-== Troubleshooting ==
+## Troubleshooting
 
-=== mvn assembly::assembly fails ===
+### mvn assembly::assembly fails
 
 Check that the groupId is correct: http://maven.apache.org/guides/mini/guide-naming-conventions.html
 For example: org.rock-robotics is an invalid groupId name
 
-=== Use a different java version ===
+### Use a different java version
 Change the source/target specification to the desired java version in the following block in the pom.xml
+
+```
 <build>
     <plugins>
         <plugin>
@@ -118,3 +133,19 @@ Change the source/target specification to the desired java version in the follow
         </plugin>
     </plugins>
 </build>
+```
+
+## Bug Report
+
+To search for bugs or report them, pleas use GitHubs issue tracker at:
+ * https://github.com/rock-multiagent/multiagent-fipa_jade_proxy/issues
+
+## License 
+
+FIPA Jade Proxy is distributed under the LGPL license v2 or higher (http://www.gnu.de/documents/gpl-2.0.en.html)
+
+## Maintainer / Authors / Contributors
+ * current maintainer:  thomas.roehr@dfki.de
+
+Copyright 2014-2017, DFKI GmbH / Robotics Innovation Center
+ 
